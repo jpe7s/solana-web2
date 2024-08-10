@@ -1,0 +1,136 @@
+package software.sava.solana.web2.jupiter.client.http.response;
+
+import software.sava.core.accounts.PublicKey;
+import software.sava.core.util.DecimalInteger;
+import software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag;
+import systems.comodal.jsoniter.CharBufferFunction;
+import systems.comodal.jsoniter.ContextFieldBufferPredicate;
+import systems.comodal.jsoniter.JsonIterator;
+
+import java.math.BigDecimal;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import static java.lang.System.Logger.Level.WARNING;
+import static software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag.*;
+import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
+
+public record TokenContext(PublicKey address,
+                           int decimals,
+                           String name,
+                           String symbol,
+                           String logoURI,
+                           Set<JupiterTokenTag> tags,
+                           BigDecimal dailyVolume,
+                           PublicKey freezeAuthority,
+                           PublicKey mintAuthority) implements DecimalInteger {
+
+  private static final System.Logger log = System.getLogger(TokenContext.class.getName());
+
+  public static TokenContext parseToken(final JsonIterator ji) {
+    return ji.testObject(new Builder(), PARSER).create();
+  }
+
+  public static Map<PublicKey, TokenContext> parseList(final JsonIterator ji) {
+    final var tokens = HashMap.<PublicKey, TokenContext>newHashMap(2_048);
+    while (ji.readArray()) {
+      final var token = parseToken(ji);
+      tokens.put(token.address, token);
+    }
+    return tokens;
+  }
+
+  private static final CharBufferFunction<JupiterTokenTag> TAG_PARSER = (buf, offset, len) -> {
+    if (fieldEquals("verified", buf, offset, len)) {
+      return verified;
+    } else if (fieldEquals("community", buf, offset, len)) {
+      return community;
+    } else if (fieldEquals("token-2022", buf, offset, len)) {
+      return token_2022;
+    } else if (fieldEquals("lst", buf, offset, len)) {
+      return lst;
+    } else if (fieldEquals("unknown", buf, offset, len)) {
+      return unknown;
+    } else if (fieldEquals("birdeye-trending", buf, offset, len)) {
+      return birdeye_trending;
+    } else if (fieldEquals("clone", buf, offset, len)) {
+      return clone;
+    } else if (fieldEquals("pump", buf, offset, len)) {
+      return pump;
+    } else if (fieldEquals("strict", buf, offset, len)) {
+      return strict;
+    } else if (fieldEquals("moonshot", buf, offset, len)) {
+      return moonshot;
+    } else {
+      log.log(WARNING,
+          "Failed to parse unknown Jupiter token tag [{0}].",
+          new String(buf, offset, len));
+      return null;
+    }
+  };
+
+  private static final ContextFieldBufferPredicate<Builder> PARSER = (builder, buf, offset, len, ji) -> {
+    if (fieldEquals("address", buf, offset, len)) {
+      builder.address = PublicKey.parseBase58Encoded(ji);
+    } else if (fieldEquals("decimals", buf, offset, len)) {
+      builder.decimals = ji.readInt();
+    } else if (fieldEquals("name", buf, offset, len)) {
+      builder.name = ji.readString();
+    } else if (fieldEquals("symbol", buf, offset, len)) {
+      builder.symbol = ji.readString();
+    } else if (fieldEquals("logoURI", buf, offset, len)) {
+      builder.logoURI = ji.readString();
+    } else if (fieldEquals("tags", buf, offset, len)) {
+      if (ji.readArray()) {
+        builder.tags = EnumSet.noneOf(JupiterTokenTag.class);
+        do {
+          final var tag = ji.applyChars(TAG_PARSER);
+          if (tag != null) {
+            builder.tags.add(tag);
+          }
+        } while (ji.readArray());
+      }
+    } else if (fieldEquals("daily_volume", buf, offset, len)) {
+      builder.dailyVolume = ji.readBigDecimalDropZeroes();
+    } else if (fieldEquals("freeze_authority", buf, offset, len)) {
+      builder.freezeAuthority = PublicKey.parseBase58Encoded(ji);
+    } else if (fieldEquals("mint_authority", buf, offset, len)) {
+      builder.mintAuthority = PublicKey.parseBase58Encoded(ji);
+    } else {
+      ji.skip();
+      log.log(WARNING,
+          "Failed to parse unknown Jupiter token context field [{0}].", new String(buf, offset, len));
+    }
+    return true;
+  };
+
+  private static final class Builder {
+
+    private static final Set<JupiterTokenTag> NO_TAGS = Set.of();
+
+    private PublicKey address;
+    private int decimals;
+    private String name;
+    private String symbol;
+    private String logoURI;
+    private Set<JupiterTokenTag> tags;
+    private BigDecimal dailyVolume;
+    private PublicKey freezeAuthority;
+    private PublicKey mintAuthority;
+
+    private Builder() {
+    }
+
+    private TokenContext create() {
+      return new TokenContext(
+          address, decimals, name, symbol, logoURI,
+          tags == null || tags.isEmpty() ? NO_TAGS : tags,
+          dailyVolume,
+          freezeAuthority,
+          mintAuthority
+      );
+    }
+  }
+}

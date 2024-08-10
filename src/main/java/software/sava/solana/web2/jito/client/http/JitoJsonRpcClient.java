@@ -1,0 +1,143 @@
+package software.sava.solana.web2.jito.client.http;
+
+import software.sava.solana.web2.jito.client.http.response.BundleStatus;
+import software.sava.solana.web2.jito.client.http.response.SendTxResult;
+import software.sava.rpc.json.http.client.JsonRpcHttpClient;
+import software.sava.rpc.json.http.request.Commitment;
+import software.sava.core.encoding.Base58;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.lang.String.format;
+import static systems.comodal.jsoniter.ValueType.STRING;
+
+final class JitoJsonRpcClient extends JsonRpcHttpClient implements JitoClient {
+
+  private static final Function<HttpResponse<byte[]>, BundleStatus> BUNDLE_STATUS_PARSER = applyResponseValue(BundleStatus::parseStatus);
+  private static final Function<HttpResponse<byte[]>, Map<String, BundleStatus>> BUNDLE_STATUSES_PARSER = applyResponseValue(BundleStatus::parseStatuses);
+  private static final Function<HttpResponse<byte[]>, SendTxResult> SEND_TX_RESPONSE_PARSER = applyResponseResult(
+      (response, ji) -> new SendTxResult(ji.readString(), response.headers().firstValue("x-bundle-id").orElse(null)));
+  private static final Function<HttpResponse<byte[]>, String> SEND_BUNDLE_RESPONSE_PARSER = applyResponseResult(
+      (response, ji) -> ji.whatIsNext() == STRING ? ji.readString() : null);
+  private static final Function<HttpResponse<byte[]>, List<String>> TIP_ACCOUNTS_PARSER = applyResponseResult(
+      (response, ji) -> {
+        final var tipAccount = new ArrayList<String>();
+        while (ji.readArray()) {
+          tipAccount.add(ji.readString());
+        }
+        return List.copyOf(tipAccount);
+      });
+
+  private final AtomicLong id;
+  private final URI bundlesURI;
+  private final URI transactionsURI;
+  private final URI bundlyOnlyTxURI;
+  private final Commitment defaultCommitment;
+  private final String apiAuthKey;
+
+  JitoJsonRpcClient(final URI endpoint,
+                    final HttpClient httpClient,
+                    final Duration requestTimeout,
+                    final Commitment defaultCommitment,
+                    final String apiAuthKey) {
+    super(endpoint, httpClient, requestTimeout);
+    this.bundlesURI = endpoint.resolve("/api/v1/bundles");
+    this.transactionsURI = endpoint.resolve("/api/v1/transactions");
+    this.bundlyOnlyTxURI = this.transactionsURI.resolve("/api/v1/transactions?bundleOnly=true");
+    this.id = new AtomicLong(System.currentTimeMillis());
+    this.defaultCommitment = defaultCommitment;
+    this.apiAuthKey = apiAuthKey;
+  }
+
+  @Override
+  protected HttpRequest.Builder newRequest(final URI endpoint, final Duration requestTimeout) {
+    final var request = super.newRequest(endpoint, requestTimeout);
+    return apiAuthKey == null ? request : request.header("x-jito-auth", apiAuthKey);
+  }
+
+  @Override
+  public CompletableFuture<List<String>> getTipAccounts() {
+    return sendPostRequest(bundlesURI, TIP_ACCOUNTS_PARSER, format("""
+        {"jsonrpc":"2.0","id":%d,"method":"getTipAccounts","params":[]}""", id.incrementAndGet()));
+  }
+
+  @Override
+  public CompletableFuture<BundleStatus> getBundleStatus(final String bundleId) {
+    return sendPostRequest(bundlesURI, BUNDLE_STATUS_PARSER, format("""
+        {"jsonrpc":"2.0","id":%d,"method":"getBundleStatuses","params":[["%s"]]}""", id.incrementAndGet(), bundleId));
+  }
+
+  @Override
+  public CompletableFuture<Map<String, BundleStatus>> getBundleStatuses(final Collection<String> bundleIds) {
+    return sendPostRequest(bundlesURI, BUNDLE_STATUSES_PARSER, format("""
+        {"jsonrpc":"2.0","id":%d,"method":"getBundleStatuses","params":[["%s"]]}""", id.incrementAndGet(), String.join("\",\"", bundleIds)));
+  }
+
+  @Override
+  public CompletableFuture<SendTxResult> sendBundleOnly(final Commitment preflightCommitment,
+                                                        final String base64SignedTx,
+                                                        final int maxRetries) {
+    return sendPostRequest(bundlyOnlyTxURI, SEND_TX_RESPONSE_PARSER, format("""
+            {"jsonrpc":"2.0","id":%d,"method":"sendTransaction","params":["%s",{"encoding":"base64","skipPreflight":true,"preflightCommitment":"%s","maxRetries":%d}]}""",
+        id.incrementAndGet(), base64SignedTx, preflightCommitment.getValue(), maxRetries));
+  }
+
+  @Override
+  public CompletableFuture<SendTxResult> sendTransactionSkipPreflight(final Commitment preflightCommitment,
+                                                                      final String base64SignedTx,
+                                                                      final int maxRetries) {
+    return sendPostRequest(transactionsURI, SEND_TX_RESPONSE_PARSER, format("""
+            {"jsonrpc":"2.0","id":%d,"method":"sendTransaction","params":["%s",{"encoding":"base64","skipPreflight":true,"preflightCommitment":"%s","maxRetries":%d}]}""",
+        id.incrementAndGet(), base64SignedTx, preflightCommitment.getValue(), maxRetries));
+  }
+
+  @Override
+  public CompletableFuture<SendTxResult> sendTransaction(final Commitment preflightCommitment,
+                                                         final String base64SignedTx,
+                                                         final int maxRetries) {
+    return sendPostRequest(transactionsURI, SEND_TX_RESPONSE_PARSER, format("""
+            {"jsonrpc":"2.0","id":%d,"method":"sendTransaction","params":["%s",{"encoding":"base64","preflightCommitment":"%s","maxRetries":%d}]}""",
+        id.incrementAndGet(), base64SignedTx, preflightCommitment.getValue(), maxRetries));
+  }
+
+  @Override
+  public CompletableFuture<String> sendBundle(final String base58SignedTransactions) {
+    final var body = String.format("""
+        {"jsonrpc":"2.0","id":%d,"method":"sendBundle","params":[["%s"]]}""", id.incrementAndGet(), base58SignedTransactions);
+    return sendPostRequest(transactionsURI, SEND_BUNDLE_RESPONSE_PARSER, body);
+  }
+
+  @Override
+  public CompletableFuture<String> sendBundle(final byte[] signedTransaction) {
+    return sendBundle(Base58.encode(signedTransaction));
+  }
+
+  @Override
+  public CompletableFuture<String> sendBundle(final Collection<String> base58SignedTransactions) {
+    return sendBundle(String.join("\",\"", base58SignedTransactions));
+  }
+
+  @Override
+  public CompletableFuture<String> sendBundle(final String[] base58SignedTransactions) {
+    return sendBundle(String.join("\",\"", base58SignedTransactions));
+  }
+
+  @Override
+  public CompletableFuture<String> sendBundle(final byte[][] signedTransactions) {
+    return sendBundle(Arrays.stream(signedTransactions).map(Base58::encode).collect(Collectors.joining("\",\"")));
+  }
+
+  @Override
+  public CompletableFuture<String> sendBundleBytes(final Collection<byte[]> signedTransactions) {
+    return sendBundle(signedTransactions.stream().map(Base58::encode).collect(Collectors.joining("\",\"")));
+  }
+}
