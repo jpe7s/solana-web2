@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static software.sava.rpc.json.http.response.JsonUtil.parseEncodedData;
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
@@ -100,13 +101,13 @@ public record MarketRecord(PublicKey pubkey,
 
   private static final ContextFieldBufferPredicate<Builder> PARSER = (builder, buf, offset, len, ji) -> {
     if (fieldEquals("pubkey", buf, offset, len)) {
-      builder.pubkey = PublicKey.parseBase58Encoded(ji);
+      builder.pubkey = parseBase58Encoded(ji);
     } else if (fieldEquals("lamports", buf, offset, len)) {
       builder.lamports = ji.readLong();
     } else if (fieldEquals("data", buf, offset, len)) {
       builder.data = parseEncodedData(ji);
     } else if (fieldEquals("owner", buf, offset, len)) {
-      builder.owner = PublicKey.parseBase58Encoded(ji);
+      builder.owner = parseBase58Encoded(ji);
     } else if (fieldEquals("executable", buf, offset, len)) {
       builder.executable = ji.readBoolean();
     } else if (fieldEquals("rentEpoch", buf, offset, len)) {

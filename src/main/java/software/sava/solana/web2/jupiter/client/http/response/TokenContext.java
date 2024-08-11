@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.lang.System.Logger.Level.WARNING;
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag.*;
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
@@ -73,7 +74,7 @@ public record TokenContext(PublicKey address,
 
   private static final ContextFieldBufferPredicate<Builder> PARSER = (builder, buf, offset, len, ji) -> {
     if (fieldEquals("address", buf, offset, len)) {
-      builder.address = PublicKey.parseBase58Encoded(ji);
+      builder.address = parseBase58Encoded(ji);
     } else if (fieldEquals("decimals", buf, offset, len)) {
       builder.decimals = ji.readInt();
     } else if (fieldEquals("name", buf, offset, len)) {
@@ -95,9 +96,9 @@ public record TokenContext(PublicKey address,
     } else if (fieldEquals("daily_volume", buf, offset, len)) {
       builder.dailyVolume = ji.readBigDecimalDropZeroes();
     } else if (fieldEquals("freeze_authority", buf, offset, len)) {
-      builder.freezeAuthority = PublicKey.parseBase58Encoded(ji);
+      builder.freezeAuthority = parseBase58Encoded(ji);
     } else if (fieldEquals("mint_authority", buf, offset, len)) {
-      builder.mintAuthority = PublicKey.parseBase58Encoded(ji);
+      builder.mintAuthority = parseBase58Encoded(ji);
     } else {
       ji.skip();
       log.log(WARNING,

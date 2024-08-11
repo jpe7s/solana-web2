@@ -1,13 +1,13 @@
 package software.sava.solana.web2.jupiter.client.http;
 
 import software.sava.core.accounts.PublicKey;
+import software.sava.rpc.json.http.client.JsonHttpClient;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterQuoteRequest;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag;
 import software.sava.solana.web2.jupiter.client.http.response.JupiterQuote;
 import software.sava.solana.web2.jupiter.client.http.response.JupiterSwapTx;
 import software.sava.solana.web2.jupiter.client.http.response.MarketRecord;
 import software.sava.solana.web2.jupiter.client.http.response.TokenContext;
-import software.sava.rpc.json.http.client.JsonHttpClient;
 
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.net.http.HttpResponse.BodyHandlers.ofByteArray;
-import static software.sava.core.accounts.PublicKey.PARSE_BASE58_PUBLIC_KEY;
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static software.sava.rpc.json.http.client.JsonResponseController.checkResponseCode;
 
 final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
@@ -44,7 +44,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   };
   private static final Function<HttpResponse<byte[]>, Map<String, PublicKey>> PROGRAM_LABEL_PARSER = applyResponse(ji -> {
     final var programLabels = new TreeMap<String, PublicKey>(String.CASE_INSENSITIVE_ORDER);
-    for (PublicKey program; (program = ji.applyObjField(PARSE_BASE58_PUBLIC_KEY)) != null; ) {
+    for (PublicKey program; (program = parseBase58Encoded(ji)) != null; ) {
       final var dex = ji.readString();
       final var previousDex = programLabels.put(dex, program);
       if (previousDex != null) {

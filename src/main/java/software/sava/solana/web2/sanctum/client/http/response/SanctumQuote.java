@@ -7,6 +7,7 @@ import systems.comodal.jsoniter.JsonIterator;
 
 import java.math.BigDecimal;
 
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
 public record SanctumQuote(BigDecimal fee,
@@ -24,7 +25,7 @@ public record SanctumQuote(BigDecimal fee,
     if (fieldEquals("feeAmount", buf, offset, len)) {
       builder.fee = ji.readBigDecimal().movePointLeft(LamportDecimal.LAMPORT_DIGITS).stripTrailingZeros();
     } else if (fieldEquals("feeMint", buf, offset, len)) {
-      builder.feeMint = PublicKey.parseBase58Encoded(ji);
+      builder.feeMint = parseBase58Encoded(ji);
     } else if (fieldEquals("feePct", buf, offset, len)) {
       builder.feePct = ji.readBigDecimalDropZeroes();
     } else if (fieldEquals("inAmount", buf, offset, len)) {

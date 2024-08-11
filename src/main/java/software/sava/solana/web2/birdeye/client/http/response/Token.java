@@ -1,6 +1,7 @@
 package software.sava.solana.web2.birdeye.client.http.response;
 
 import software.sava.core.accounts.PublicKey;
+import software.sava.rpc.json.PublicKeyEncoding;
 import systems.comodal.jsoniter.ContextFieldBufferPredicate;
 import systems.comodal.jsoniter.JsonIterator;
 
@@ -9,6 +10,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
 public record Token(PublicKey address,
@@ -33,7 +35,7 @@ public record Token(PublicKey address,
 
   private static final ContextFieldBufferPredicate<Builder> PARSER = (builder, buf, offset, len, ji) -> {
     if (fieldEquals("address", buf, offset, len)) {
-      builder.address = ji.applyChars(PublicKey.PARSE_BASE58_PUBLIC_KEY);
+      builder.address = parseBase58Encoded(ji);
     } else if (fieldEquals("decimals", buf, offset, len)) {
       builder.decimals = ji.readInt();
     } else if (fieldEquals("liquidity", buf, offset, len)) {

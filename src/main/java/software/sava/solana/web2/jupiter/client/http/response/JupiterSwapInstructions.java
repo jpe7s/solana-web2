@@ -1,7 +1,7 @@
 package software.sava.solana.web2.jupiter.client.http.response;
 
-import software.sava.core.accounts.lookup.AddressLookupTable;
 import software.sava.core.accounts.PublicKey;
+import software.sava.core.accounts.lookup.AddressLookupTable;
 import software.sava.core.accounts.meta.AccountMeta;
 import software.sava.core.accounts.meta.LookupTableAccountMeta;
 import software.sava.core.tx.Instruction;
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static software.sava.core.tx.Transaction.sortLegacyAccounts;
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
 public record JupiterSwapInstructions(Instruction tokenLedgerInstruction,
@@ -132,7 +133,7 @@ public record JupiterSwapInstructions(Instruction tokenLedgerInstruction,
 
   private static final ContextFieldBufferPredicate<InstructionBuilder> INSTRUCTION_PARSER = (builder, buf, offset, len, ji) -> {
     if (fieldEquals("programId", buf, offset, len)) {
-      builder.programId = ji.applyChars(PublicKey.PARSE_BASE58_PUBLIC_KEY);
+      builder.programId = parseBase58Encoded(ji);
     } else if (fieldEquals("accounts", buf, offset, len)) {
       final var accounts = new ArrayList<AccountMeta>();
       final var accountBuilder = new AccountBuilder();
@@ -150,7 +151,7 @@ public record JupiterSwapInstructions(Instruction tokenLedgerInstruction,
 
   private static final ContextFieldBufferPredicate<AccountBuilder> ACCOUNT_PARSER = (builder, buf, offset, len, ji) -> {
     if (fieldEquals("pubkey", buf, offset, len)) {
-      builder.pubKey = ji.applyChars(PublicKey.PARSE_BASE58_PUBLIC_KEY);
+      builder.pubKey = parseBase58Encoded(ji);
     } else if (fieldEquals("isSigner", buf, offset, len)) {
       builder.signer = ji.readBoolean();
     } else if (fieldEquals("isWritable", buf, offset, len)) {
@@ -185,7 +186,7 @@ public record JupiterSwapInstructions(Instruction tokenLedgerInstruction,
     } else if (fieldEquals("addressLookupTableAddresses", buf, offset, len)) {
       final var addressLookupTableAddresses = new ArrayList<PublicKey>();
       while (ji.readArray()) {
-        addressLookupTableAddresses.add(ji.applyChars(PublicKey.PARSE_BASE58_PUBLIC_KEY));
+        addressLookupTableAddresses.add(parseBase58Encoded(ji));
       }
       builder.addressLookupTableAddresses = addressLookupTableAddresses;
     } else if (fieldEquals("prioritizationFeeLamports", buf, offset, len)) {

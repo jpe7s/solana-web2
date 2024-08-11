@@ -4,6 +4,7 @@ import software.sava.core.accounts.PublicKey;
 import systems.comodal.jsoniter.ContextFieldBufferPredicate;
 import systems.comodal.jsoniter.JsonIterator;
 
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
 public record JupiterRoute(PublicKey ammKey,
@@ -22,13 +23,13 @@ public record JupiterRoute(PublicKey ammKey,
 
   private static final ContextFieldBufferPredicate<Builder> SWAP_INFO_PARSER = (builder, buf, offset, len, ji) -> {
     if (fieldEquals("ammKey", buf, offset, len)) {
-      builder.ammKey = PublicKey.parseBase58Encoded(ji);
+      builder.ammKey = parseBase58Encoded(ji);
     } else if (fieldEquals("label", buf, offset, len)) {
       builder.label = ji.readString();
     } else if (fieldEquals("inputMint", buf, offset, len)) {
-      builder.inputMint = PublicKey.parseBase58Encoded(ji);
+      builder.inputMint = parseBase58Encoded(ji);
     } else if (fieldEquals("outputMint", buf, offset, len)) {
-      builder.outputMint = PublicKey.parseBase58Encoded(ji);
+      builder.outputMint = parseBase58Encoded(ji);
     } else if (fieldEquals("inAmount", buf, offset, len)) {
       builder.inAmount = ji.readLong();
     } else if (fieldEquals("outAmount", buf, offset, len)) {
@@ -36,7 +37,7 @@ public record JupiterRoute(PublicKey ammKey,
     } else if (fieldEquals("feeAmount", buf, offset, len)) {
       builder.feeAmount = ji.readLong();
     } else if (fieldEquals("feeMint", buf, offset, len)) {
-      builder.feeMint = PublicKey.parseBase58Encoded(ji);
+      builder.feeMint = parseBase58Encoded(ji);
     } else {
       ji.skip();
     }

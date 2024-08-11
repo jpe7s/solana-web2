@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
 public record JupiterQuote(PublicKey inputMint,
@@ -30,11 +31,11 @@ public record JupiterQuote(PublicKey inputMint,
 
   private static final ContextFieldBufferPredicate<Builder> PARSER = (builder, buf, offset, len, ji) -> {
     if (fieldEquals("inputMint", buf, offset, len)) {
-      builder.inputMint = PublicKey.parseBase58Encoded(ji);
+      builder.inputMint = parseBase58Encoded(ji);
     } else if (fieldEquals("inAmount", buf, offset, len)) {
       builder.inAmount = ji.readLong();
     } else if (fieldEquals("outputMint", buf, offset, len)) {
-      builder.outputMint = PublicKey.parseBase58Encoded(ji);
+      builder.outputMint = parseBase58Encoded(ji);
     } else if (fieldEquals("outAmount", buf, offset, len)) {
       builder.outAmount = ji.readLong();
     } else if (fieldEquals("otherAmountThreshold", buf, offset, len)) {
