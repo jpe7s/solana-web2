@@ -5,7 +5,7 @@ import java.util.List;
 public final class PriorityFeeRequest {
 
   public static final int DEFAULT_LOOK_BACK_SLOTS = 150;
-  public static final String DEFAULT_TX_ENCODING = "base64";
+  public static final Encoding DEFAULT_TX_ENCODING = Encoding.base64;
 
   public static String serializeParams(final List<String> accountKeys, final int lookBackSlots) {
 
@@ -44,11 +44,17 @@ public final class PriorityFeeRequest {
     );
   }
 
+  public static String serializeParams(final String transaction,
+                                       final Encoding transactionEncoding,
+                                       final int lookBackSlots) {
+    return serializeParams(transaction, transactionEncoding.name(), lookBackSlots);
+  }
+
   public static String serializeParams(final String transaction) {
     return serializeParams(transaction, DEFAULT_TX_ENCODING, DEFAULT_LOOK_BACK_SLOTS);
   }
 
-  public static String serializeParams(final String transaction, final String transactionEncoding) {
+  public static String serializeParams(final String transaction, final Encoding transactionEncoding) {
     return serializeParams(transaction, transactionEncoding, DEFAULT_LOOK_BACK_SLOTS);
   }
 
@@ -72,7 +78,7 @@ public final class PriorityFeeRequest {
     );
   }
 
-  public static String serializeRecommendedParams(final String transaction, final String transactionEncoding) {
+  public static String serializeRecommendedParams(final String transaction, final Encoding transactionEncoding) {
     return String.format("""
             "transaction":"%s",
             "options":{

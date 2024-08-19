@@ -1,5 +1,7 @@
 package software.sava.solana.web2.helius.client.http;
 
+import software.sava.core.tx.Transaction;
+import software.sava.solana.web2.helius.client.http.request.Encoding;
 import software.sava.solana.web2.helius.client.http.response.PriorityFeesEstimates;
 
 import java.math.BigDecimal;
@@ -9,8 +11,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static software.sava.solana.web2.helius.client.http.HeliusJsonRpcClient.DEFAULT_REQUEST_TIMEOUT;
 import static software.sava.rpc.json.http.request.Commitment.CONFIRMED;
+import static software.sava.solana.web2.helius.client.http.HeliusJsonRpcClient.DEFAULT_REQUEST_TIMEOUT;
 
 public interface HeliusClient {
 
@@ -47,13 +49,21 @@ public interface HeliusClient {
 
   CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final String transaction);
 
-  CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final String transaction, final String transactionEncoding);
+  CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final String transaction, final Encoding transactionEncoding);
 
   CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final String transaction,
-                                                                             final String transactionEncoding,
+                                                                             final Encoding transactionEncoding,
                                                                              final int lookBackSlots);
 
   CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final String transaction, final int lookBackSlots);
+
+  default CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final Transaction transaction) {
+    return getTransactionPriorityFeeEstimate(transaction.base64EncodeToString(), Encoding.base64);
+  }
+
+  default CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final Transaction transaction, final int lookBackSlots) {
+    return getTransactionPriorityFeeEstimate(transaction.base64EncodeToString(), Encoding.base64, lookBackSlots);
+  }
 
   CompletableFuture<BigDecimal> getRecommendedPriorityFeeEstimate(final String params);
 
@@ -61,6 +71,6 @@ public interface HeliusClient {
 
   CompletableFuture<BigDecimal> getRecommendedTransactionPriorityFeeEstimate(final String transaction);
 
-  CompletableFuture<BigDecimal> getRecommendedTransactionPriorityFeeEstimate(final String transaction, final String transactionEncoding);
+  CompletableFuture<BigDecimal> getRecommendedTransactionPriorityFeeEstimate(final String transaction, final Encoding transactionEncoding);
 
 }

@@ -1,8 +1,9 @@
 package software.sava.solana.web2.helius.client.http;
 
-import software.sava.solana.web2.helius.client.http.response.PriorityFeesEstimates;
 import software.sava.rpc.json.http.client.JsonRpcHttpClient;
 import software.sava.rpc.json.http.request.Commitment;
+import software.sava.solana.web2.helius.client.http.request.Encoding;
+import software.sava.solana.web2.helius.client.http.response.PriorityFeesEstimates;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -60,13 +61,13 @@ final class HeliusJsonRpcClient extends JsonRpcHttpClient implements HeliusClien
 
   @Override
   public CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final String transaction,
-                                                                                    final String transactionEncoding) {
+                                                                                    final Encoding transactionEncoding) {
     return getPriorityFeeEstimate(serializeParams(transaction, transactionEncoding));
   }
 
   @Override
   public CompletableFuture<PriorityFeesEstimates> getTransactionPriorityFeeEstimate(final String transaction,
-                                                                                    final String transactionEncoding,
+                                                                                    final Encoding transactionEncoding,
                                                                                     final int lookBackSlots) {
     return getPriorityFeeEstimate(serializeParams(transaction, transactionEncoding, lookBackSlots));
   }
@@ -97,7 +98,7 @@ final class HeliusJsonRpcClient extends JsonRpcHttpClient implements HeliusClien
 
   @Override
   public CompletableFuture<BigDecimal> getRecommendedTransactionPriorityFeeEstimate(final String transaction,
-                                                                                    final String transactionEncoding) {
+                                                                                    final Encoding transactionEncoding) {
     return getRecommendedPriorityFeeEstimate(serializeRecommendedParams(transaction, transactionEncoding));
   }
 }
