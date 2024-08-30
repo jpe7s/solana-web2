@@ -23,9 +23,9 @@ public record JupiterQuote(PublicKey inputMint,
                            List<JupiterRoute> routePlan,
                            long contextSlot,
                            double timeTaken,
-                           String quoteResponseJson) {
+                           byte[] quoteResponseJson) {
 
-  public static JupiterQuote parse(final String quoteResponseJson, final JsonIterator ji) {
+  public static JupiterQuote parse(final byte[] quoteResponseJson, final JsonIterator ji) {
     return ji.testObject(new Builder(quoteResponseJson), PARSER).create();
   }
 
@@ -66,7 +66,7 @@ public record JupiterQuote(PublicKey inputMint,
 
   private static final class Builder {
 
-    private final String quoteResponseJson;
+    private final byte[] quoteResponseJson;
     private PublicKey inputMint;
     private long inAmount;
     private PublicKey outputMint;
@@ -80,7 +80,7 @@ public record JupiterQuote(PublicKey inputMint,
     private long contextSlot;
     private double timeTaken;
 
-    private Builder(final String quoteResponseJson) {
+    private Builder(final byte[] quoteResponseJson) {
       this.quoteResponseJson = quoteResponseJson;
     }
 

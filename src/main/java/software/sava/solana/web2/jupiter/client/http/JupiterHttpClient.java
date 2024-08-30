@@ -2,6 +2,7 @@ package software.sava.solana.web2.jupiter.client.http;
 
 import software.sava.core.accounts.PublicKey;
 import software.sava.rpc.json.http.client.JsonHttpClient;
+import software.sava.rpc.json.http.client.JsonRpcResponseResultParseController;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterQuoteRequest;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag;
 import software.sava.solana.web2.jupiter.client.http.response.JupiterQuote;
@@ -36,7 +37,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   private static final Function<HttpResponse<byte[]>, TokenContext> TOKEN = applyResponse(TokenContext::parseToken);
   private static final Function<HttpResponse<byte[]>, Map<PublicKey, TokenContext>> TOKEN_LIST = applyResponse(TokenContext::parseList);
-  private static final Function<HttpResponse<String>, JupiterQuote> QUOTE_PARSER = applyResponse(JupiterQuote::parse);
+  private static final Function<HttpResponse<byte[]>, JupiterQuote> QUOTE_PARSER = new JsonRpcResponseResultParseController<>((response, ji) -> JupiterQuote.parse(response.body(), ji)); // applyResponse(JupiterQuote::parse);
   private static final Function<HttpResponse<byte[]>, JupiterSwapTx> SWAP_TX = applyResponse(JupiterSwapTx::parse);
   private static final Function<HttpResponse<byte[]>, byte[]> SWAP_INSTRUCTIONS_TX = response -> {
     checkResponseCode(response);
@@ -61,6 +62,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   private final URI tokensWithMarketsPath;
   private final String quotePathFormat;
   private final String quotePath;
+  private final URI quoteURI;
   private final URI swapURI;
   private final URI swapInstructionsURI;
   private final HttpRequest programLabelsRequest;
@@ -88,6 +90,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
         this.swapInstructionsURI = quoteEndpoint.resolve("/v6/swap-instructions");
         this.programLabelsRequest = newGetRequest(quoteEndpoint.resolve("/v6/program-id-to-label")).build();
       }
+      this.quoteURI = quoteEndpoint.resolve(quotePath);
     } catch (final UnknownHostException e) {
       throw new UncheckedIOException(e);
     }
@@ -140,7 +143,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder, final String quoteResponseJson) {
+  public CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder, final byte[] quoteResponseJson) {
     return swap(jsonBodyBuilder, quoteResponseJson, requestTimeout);
   }
 
@@ -150,7 +153,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix, final String quoteResponseJson) {
+  public CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix, final byte[] quoteResponseJson) {
     return swap(jsonBodyPrefix, quoteResponseJson, requestTimeout);
   }
 
@@ -160,7 +163,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final String quoteResponseJson) {
+  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final byte[] quoteResponseJson) {
     return swapInstructions(jsonBodyBuilder, quoteResponseJson, requestTimeout);
   }
 
@@ -170,7 +173,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final String quoteResponseJson) {
+  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final byte[] quoteResponseJson) {
     return swapInstructions(jsonBodyPrefix, quoteResponseJson, requestTimeout);
   }
 
@@ -183,9 +186,9 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   @Override
   public CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder,
-                                               final String quoteResponseJson,
+                                               final byte[] quoteResponseJson,
                                                final Duration requestTimeout) {
-    return swap(jsonBodyBuilder.append(quoteResponseJson).append('}').toString(), requestTimeout);
+    return swap(jsonBodyBuilder.append(new String(quoteResponseJson)).append('}').toString(), requestTimeout);
   }
 
   @Override
@@ -197,9 +200,9 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   @Override
   public CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix,
-                                               final String quoteResponseJson,
+                                               final byte[] quoteResponseJson,
                                                final Duration requestTimeout) {
-    return swap(jsonBodyPrefix + quoteResponseJson + '}', requestTimeout);
+    return swap(jsonBodyPrefix + new String(quoteResponseJson) + '}', requestTimeout);
   }
 
   private CompletableFuture<JupiterSwapTx> swap(final String jsonBody,
@@ -213,8 +216,8 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final String quoteResponseJson, final Duration requestTimeout) {
-    return swapInstructions(jsonBodyBuilder.append(quoteResponseJson).append('}').toString(), requestTimeout);
+  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final byte[] quoteResponseJson, final Duration requestTimeout) {
+    return swapInstructions(jsonBodyBuilder.append(new String(quoteResponseJson)).append('}').toString(), requestTimeout);
   }
 
   @Override
@@ -223,8 +226,8 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final String quoteResponseJson, final Duration requestTimeout) {
-    return swapInstructions(jsonBodyPrefix + quoteResponseJson + '}', requestTimeout);
+  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final byte[] quoteResponseJson, final Duration requestTimeout) {
+    return swapInstructions(jsonBodyPrefix + new String(quoteResponseJson) + '}', requestTimeout);
   }
 
   private CompletableFuture<byte[]> swapInstructions(final String jsonBody, final Duration requestTimeout) {
@@ -257,13 +260,19 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   public CompletableFuture<JupiterQuote> getQuote(final BigInteger amount,
                                                   final String query,
                                                   final Duration requestTimeout) {
-    return sendGetRequestWithStringResponse(QUOTE_PARSER, requestTimeout, String.format(quotePathFormat, amount, query));
+    final var request = newGetRequest(quoteURI.resolve(String.format(quotePathFormat, amount, query)))
+        .timeout(requestTimeout)
+        .build();
+    return this.httpClient.sendAsync(request, ofByteArray())
+        .thenApply(QUOTE_PARSER);
   }
 
   @Override
   public CompletableFuture<JupiterQuote> getQuote(final String query, final Duration requestTimeout) {
-    final var pathQuery = quotePath + query;
-    return sendGetRequestWithStringResponse(QUOTE_PARSER, requestTimeout, pathQuery);
+    final var request = newGetRequest(quoteURI.resolve(quotePath + query))
+        .timeout(requestTimeout)
+        .build();
+    return this.httpClient.sendAsync(request, ofByteArray()).thenApply(QUOTE_PARSER);
   }
 
   @Override

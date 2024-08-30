@@ -85,19 +85,19 @@ public interface JupiterClient {
 
   CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder, final JupiterQuote jupiterQuote);
 
-  CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder, final String quoteResponseJson);
+  CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder, final byte[] quoteResponseJson);
 
   CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix, final JupiterQuote jupiterQuote);
 
-  CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix, final String quoteResponseJson);
+  CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix, final byte[] quoteResponseJson);
 
   CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final JupiterQuote jupiterQuote);
 
-  CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final String quoteResponseJson);
+  CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final byte[] quoteResponseJson);
 
   CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final JupiterQuote jupiterQuote);
 
-  CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final String quoteResponseJson);
+  CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final byte[] quoteResponseJson);
 
 
   default CompletableFuture<JupiterQuote> getQuote(final JupiterQuoteRequest quoteRequest) {
@@ -115,7 +115,7 @@ public interface JupiterClient {
                                         final Duration requestTimeout);
 
   CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder,
-                                        final String quoteResponseJson,
+                                        final byte[] quoteResponseJson,
                                         final Duration requestTimeout);
 
   CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix,
@@ -123,7 +123,7 @@ public interface JupiterClient {
                                         final Duration requestTimeout);
 
   CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix,
-                                        final String quoteResponseJson,
+                                        final byte[] quoteResponseJson,
                                         final Duration requestTimeout);
 
   CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
@@ -131,7 +131,7 @@ public interface JupiterClient {
                                              final Duration requestTimeout);
 
   CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
-                                             final String quoteResponseJson,
+                                             final byte[] quoteResponseJson,
                                              final Duration requestTimeout);
 
   CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
@@ -139,7 +139,7 @@ public interface JupiterClient {
                                              final Duration requestTimeout);
 
   CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
-                                             final String quoteResponseJson,
+                                             final byte[] quoteResponseJson,
                                              final Duration requestTimeout);
 
   default CompletableFuture<JupiterQuote> getQuote(final JupiterQuoteRequest quoteRequest,
