@@ -2,7 +2,7 @@ package software.sava.solana.web2.jupiter.client.http;
 
 import software.sava.core.accounts.PublicKey;
 import software.sava.rpc.json.http.client.JsonHttpClient;
-import software.sava.rpc.json.http.client.JsonRpcResponseResultParseController;
+import software.sava.rpc.json.http.client.KeepJsonResponseController;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterQuoteRequest;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag;
 import software.sava.solana.web2.jupiter.client.http.response.JupiterQuote;
@@ -37,7 +37,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   private static final Function<HttpResponse<byte[]>, TokenContext> TOKEN = applyResponse(TokenContext::parseToken);
   private static final Function<HttpResponse<byte[]>, Map<PublicKey, TokenContext>> TOKEN_LIST = applyResponse(TokenContext::parseList);
-  private static final Function<HttpResponse<byte[]>, JupiterQuote> QUOTE_PARSER = new JsonRpcResponseResultParseController<>((response, ji) -> JupiterQuote.parse(response.body(), ji)); // applyResponse(JupiterQuote::parse);
+  private static final Function<HttpResponse<byte[]>, JupiterQuote> QUOTE_PARSER = new KeepJsonResponseController<>(JupiterQuote::parse); // applyResponse(JupiterQuote::parse);
   private static final Function<HttpResponse<byte[]>, JupiterSwapTx> SWAP_TX = applyResponse(JupiterSwapTx::parse);
   private static final Function<HttpResponse<byte[]>, byte[]> SWAP_INSTRUCTIONS_TX = response -> {
     checkResponseCode(response);
