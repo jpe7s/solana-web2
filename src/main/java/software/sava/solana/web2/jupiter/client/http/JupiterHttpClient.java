@@ -62,7 +62,6 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   private final URI tokensWithMarketsPath;
   private final String quotePathFormat;
   private final String quotePath;
-  private final URI quoteURI;
   private final URI swapURI;
   private final URI swapInstructionsURI;
   private final HttpRequest programLabelsRequest;
@@ -90,7 +89,6 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
         this.swapInstructionsURI = quoteEndpoint.resolve("/v6/swap-instructions");
         this.programLabelsRequest = newGetRequest(quoteEndpoint.resolve("/v6/program-id-to-label")).build();
       }
-      this.quoteURI = quoteEndpoint.resolve(quotePath);
     } catch (final UnknownHostException e) {
       throw new UncheckedIOException(e);
     }
@@ -260,18 +258,13 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   public CompletableFuture<JupiterQuote> getQuote(final BigInteger amount,
                                                   final String query,
                                                   final Duration requestTimeout) {
-    final var request = newGetRequest(quoteURI.resolve(String.format(quotePathFormat, amount, query)))
-        .timeout(requestTimeout)
-        .build();
-    return this.httpClient.sendAsync(request, ofByteArray())
-        .thenApply(QUOTE_PARSER);
+    final var request = newRequest(String.format(quotePathFormat, amount, query), requestTimeout).GET().build();
+    return this.httpClient.sendAsync(request, ofByteArray()).thenApply(QUOTE_PARSER);
   }
 
   @Override
   public CompletableFuture<JupiterQuote> getQuote(final String query, final Duration requestTimeout) {
-    final var request = newGetRequest(quoteURI.resolve(quotePath + query))
-        .timeout(requestTimeout)
-        .build();
+    final var request = newRequest(quotePath + query, requestTimeout).GET().build();
     return this.httpClient.sendAsync(request, ofByteArray()).thenApply(QUOTE_PARSER);
   }
 
