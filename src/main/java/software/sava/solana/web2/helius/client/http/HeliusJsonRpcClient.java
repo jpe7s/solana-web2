@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static software.sava.solana.web2.helius.client.http.request.PriorityFeeRequest.serializeParams;
 import static software.sava.solana.web2.helius.client.http.request.PriorityFeeRequest.serializeRecommendedParams;
@@ -30,8 +31,9 @@ final class HeliusJsonRpcClient extends JsonRpcHttpClient implements HeliusClien
   HeliusJsonRpcClient(final URI endpoint,
                       final HttpClient httpClient,
                       final Duration requestTimeout,
+                      final Predicate<HttpResponse<byte[]>> applyResponse,
                       final Commitment defaultCommitment) {
-    super(endpoint, httpClient, requestTimeout);
+    super(endpoint, httpClient, requestTimeout, applyResponse);
     this.id = new AtomicLong(System.currentTimeMillis());
     this.defaultCommitment = defaultCommitment;
   }

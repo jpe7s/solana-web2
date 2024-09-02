@@ -1,10 +1,10 @@
 package software.sava.solana.web2.jito.client.http;
 
-import software.sava.solana.web2.jito.client.http.response.BundleStatus;
-import software.sava.solana.web2.jito.client.http.response.SendTxResult;
+import software.sava.core.encoding.Base58;
 import software.sava.rpc.json.http.client.JsonRpcHttpClient;
 import software.sava.rpc.json.http.request.Commitment;
-import software.sava.core.encoding.Base58;
+import software.sava.solana.web2.jito.client.http.response.BundleStatus;
+import software.sava.solana.web2.jito.client.http.response.SendTxResult;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -47,9 +48,10 @@ final class JitoJsonRpcClient extends JsonRpcHttpClient implements JitoClient {
   JitoJsonRpcClient(final URI endpoint,
                     final HttpClient httpClient,
                     final Duration requestTimeout,
+                    final Predicate<HttpResponse<byte[]>> applyResponse,
                     final Commitment defaultCommitment,
                     final String apiAuthKey) {
-    super(endpoint, httpClient, requestTimeout);
+    super(endpoint, httpClient, requestTimeout, applyResponse);
     this.bundlesURI = endpoint.resolve("/api/v1/bundles");
     this.transactionsURI = endpoint.resolve("/api/v1/transactions");
     this.bundlyOnlyTxURI = this.transactionsURI.resolve("/api/v1/transactions?bundleOnly=true");

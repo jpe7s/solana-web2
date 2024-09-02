@@ -7,9 +7,11 @@ import software.sava.solana.web2.helius.client.http.response.PriorityFeesEstimat
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 import static software.sava.rpc.json.http.request.Commitment.CONFIRMED;
 import static software.sava.solana.web2.helius.client.http.HeliusJsonRpcClient.DEFAULT_REQUEST_TIMEOUT;
@@ -18,25 +20,25 @@ public interface HeliusClient {
 
   static HeliusClient createHttpClient(final URI endpoint,
                                        final HttpClient httpClient,
-                                       final Duration requestTimeout) {
-    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, CONFIRMED);
+                                       final Duration requestTimeout,
+                                       final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, applyResponse, CONFIRMED);
   }
 
   static HeliusClient createHttpClient(final URI endpoint,
-                                       final HttpClient httpClient) {
+                                       final HttpClient httpClient,
+                                       final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createHttpClient(endpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, applyResponse);
+  }
+
+  static HeliusClient createHttpClient(final URI endpoint,
+                                       final HttpClient httpClient,
+                                       final Duration requestTimeout) {
+    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, null, CONFIRMED);
+  }
+
+  static HeliusClient createHttpClient(final URI endpoint, final HttpClient httpClient) {
     return createHttpClient(endpoint, httpClient, DEFAULT_REQUEST_TIMEOUT);
-  }
-
-  static HeliusClient createHttpClient(final String endpoint, final HttpClient httpClient) {
-    return createHttpClient(URI.create(endpoint), httpClient);
-  }
-
-  static HeliusClient createHttpClient(final URI endpoint) {
-    return createHttpClient(endpoint, HttpClient.newHttpClient());
-  }
-
-  static HeliusClient createHttpClient(final String endpoint) {
-    return createHttpClient(URI.create(endpoint));
   }
 
   URI endpoint();
