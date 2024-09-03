@@ -11,12 +11,14 @@ import software.sava.solana.web2.jupiter.client.http.response.TokenContext;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 import static software.sava.solana.web2.jupiter.client.http.JupiterHttpClient.DEFAULT_REQUEST_TIMEOUT;
 
@@ -28,26 +30,38 @@ public interface JupiterClient {
   static JupiterClient createClient(final URI quoteEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
+                                    final Duration requestTimeout,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, applyResponse);
+  }
+
+  static JupiterClient createClient(final URI quoteEndpoint,
+                                    final URI tokensEndpoint,
+                                    final HttpClient httpClient,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(quoteEndpoint, tokensEndpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, applyResponse);
+  }
+
+  static JupiterClient createClient(final HttpClient httpClient,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(URI.create(PUBLIC_QUOTE_ENDPOINT), URI.create(PUBLIC_TOKEN_LIST_ENDPOINT), httpClient, applyResponse);
+  }
+
+  static JupiterClient createClient(final URI quoteEndpoint,
+                                    final URI tokensEndpoint,
+                                    final HttpClient httpClient,
                                     final Duration requestTimeout) {
-    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout);
+    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, null);
   }
 
   static JupiterClient createClient(final URI quoteEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient) {
-    return createClient(quoteEndpoint, tokensEndpoint, httpClient, DEFAULT_REQUEST_TIMEOUT);
-  }
-
-  static JupiterClient createClient() {
-    return createClient(URI.create(PUBLIC_QUOTE_ENDPOINT), URI.create(PUBLIC_TOKEN_LIST_ENDPOINT));
-  }
-
-  static JupiterClient createClient(final URI quoteEndpoint, final URI tokensEndpoint) {
-    return createClient(quoteEndpoint, tokensEndpoint, HttpClient.newHttpClient());
+    return createClient(quoteEndpoint, tokensEndpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, null);
   }
 
   static JupiterClient createClient(final HttpClient httpClient) {
-    return createClient(URI.create(PUBLIC_QUOTE_ENDPOINT), URI.create(PUBLIC_TOKEN_LIST_ENDPOINT), httpClient);
+    return createClient(URI.create(PUBLIC_QUOTE_ENDPOINT), URI.create(PUBLIC_TOKEN_LIST_ENDPOINT), httpClient, DEFAULT_REQUEST_TIMEOUT, null);
   }
 
   URI endpoint();

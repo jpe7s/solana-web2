@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.net.http.HttpResponse.BodyHandlers.ofByteArray;
@@ -68,8 +69,9 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   JupiterHttpClient(final URI quoteEndpoint,
                     final URI tokensEndpoint,
                     final HttpClient httpClient,
-                    final Duration requestTimeout) {
-    super(quoteEndpoint, httpClient, requestTimeout);
+                    final Duration requestTimeout,
+                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    super(quoteEndpoint, httpClient, requestTimeout, applyResponse);
     this.tokensEndpoint = tokensEndpoint;
     this.tokensPath = tokensEndpoint.resolve("/tokens");
     this.tokensWithMarketsPath = tokensPath.resolve("tokens_with_markets");
