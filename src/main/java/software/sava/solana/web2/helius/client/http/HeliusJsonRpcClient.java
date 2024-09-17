@@ -1,7 +1,6 @@
 package software.sava.solana.web2.helius.client.http;
 
 import software.sava.rpc.json.http.client.JsonRpcHttpClient;
-import software.sava.rpc.json.http.request.Commitment;
 import software.sava.solana.web2.helius.client.http.request.Encoding;
 import software.sava.solana.web2.helius.client.http.response.PriorityFeesEstimates;
 
@@ -26,16 +25,13 @@ final class HeliusJsonRpcClient extends JsonRpcHttpClient implements HeliusClien
   private static final Function<HttpResponse<byte[]>, BigDecimal> PRIORITY_FEE = applyResponseResult(ji -> ji.skipUntil("priorityFeeEstimate").readBigDecimalDropZeroes());
 
   private final AtomicLong id;
-  private final Commitment defaultCommitment;
 
   HeliusJsonRpcClient(final URI endpoint,
                       final HttpClient httpClient,
                       final Duration requestTimeout,
-                      final Predicate<HttpResponse<byte[]>> applyResponse,
-                      final Commitment defaultCommitment) {
+                      final Predicate<HttpResponse<byte[]>> applyResponse) {
     super(endpoint, httpClient, requestTimeout, applyResponse);
     this.id = new AtomicLong(System.currentTimeMillis());
-    this.defaultCommitment = defaultCommitment;
   }
 
   @Override

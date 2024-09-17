@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-import static software.sava.rpc.json.http.request.Commitment.CONFIRMED;
 import static software.sava.solana.web2.helius.client.http.HeliusJsonRpcClient.DEFAULT_REQUEST_TIMEOUT;
 
 public interface HeliusClient {
@@ -22,7 +21,7 @@ public interface HeliusClient {
                                        final HttpClient httpClient,
                                        final Duration requestTimeout,
                                        final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, applyResponse, CONFIRMED);
+    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, applyResponse);
   }
 
   static HeliusClient createHttpClient(final URI endpoint,
@@ -34,7 +33,7 @@ public interface HeliusClient {
   static HeliusClient createHttpClient(final URI endpoint,
                                        final HttpClient httpClient,
                                        final Duration requestTimeout) {
-    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, null, CONFIRMED);
+    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, null);
   }
 
   static HeliusClient createHttpClient(final URI endpoint, final HttpClient httpClient) {

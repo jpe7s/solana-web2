@@ -30,7 +30,7 @@ apply plugin: 'maven-publish'
 project.group = 'software.sava'
 project.version = "$VERSION"
 
-final JLV = JavaLanguageVersion.of(project.findProperty('jv') as Integer ?: 22)
+final JLV = JavaLanguageVersion.of(project.findProperty('jv') as Integer ?: 23)
 
 plugins.withType(JavaPlugin).configureEach {
   java {
@@ -67,13 +67,6 @@ repositories {
     }
   }
   mavenCentral()
-}
-
-configurations.configureEach {
-  resolutionStrategy {
-    cacheDynamicVersionsFor 15, 'minutes'
-    cacheChangingModulesFor 15, 'minutes'
-  }
 }
 
 test {
