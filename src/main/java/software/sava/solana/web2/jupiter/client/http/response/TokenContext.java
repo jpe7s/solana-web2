@@ -8,10 +8,8 @@ import systems.comodal.jsoniter.ContextFieldBufferPredicate;
 import systems.comodal.jsoniter.JsonIterator;
 
 import java.math.BigDecimal;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.time.Instant;
+import java.util.*;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static software.sava.rpc.json.PublicKeyEncoding.parseBase58Encoded;
@@ -26,7 +24,11 @@ public record TokenContext(PublicKey address,
                            Set<JupiterTokenTag> tags,
                            BigDecimal dailyVolume,
                            PublicKey freezeAuthority,
-                           PublicKey mintAuthority) implements DecimalInteger {
+                           PublicKey mintAuthority,
+                           PublicKey permanentDelegate,
+                           Instant createdAt,
+                           Instant mintedAt,
+                           Map<TokenExtension, String> extensions) implements DecimalInteger {
 
   private static final System.Logger log = System.getLogger(TokenContext.class.getName());
 
@@ -101,6 +103,30 @@ public record TokenContext(PublicKey address,
       builder.freezeAuthority = parseBase58Encoded(ji);
     } else if (fieldEquals("mint_authority", buf, offset, len)) {
       builder.mintAuthority = parseBase58Encoded(ji);
+    } else if (fieldEquals("permanent_delegate", buf, offset, len)) {
+      builder.permanentDelegate = parseBase58Encoded(ji);
+    } else if (fieldEquals("extensions", buf, offset, len)) {
+      final var extensions = new EnumMap<TokenExtension, String>(TokenExtension.class);
+      for (String extension, value; (extension = ji.readObjField()) != null; ) {
+        value = ji.readString();
+        try {
+          extensions.put(TokenExtension.valueOf(extension), value);
+        } catch (final RuntimeException ex) {
+          log.log(WARNING,
+              "Failed to parse unknown Jupiter token extension [{0}={1}].", extension, value);
+        }
+      }
+      builder.extensions = extensions;
+    } else if (fieldEquals("created_at", buf, offset, len)) {
+      final var createdAt = ji.readString();
+      if (createdAt != null) {
+        builder.createdAt = Instant.parse(createdAt);
+      }
+    } else if (fieldEquals("minted_at", buf, offset, len)) {
+      final var mintedAt = ji.readString();
+      if (mintedAt != null) {
+        builder.mintedAt = Instant.parse(mintedAt);
+      }
     } else {
       ji.skip();
       log.log(WARNING,
@@ -122,6 +148,10 @@ public record TokenContext(PublicKey address,
     private BigDecimal dailyVolume;
     private PublicKey freezeAuthority;
     private PublicKey mintAuthority;
+    private PublicKey permanentDelegate;
+    private Instant createdAt;
+    private Instant mintedAt;
+    private Map<TokenExtension, String> extensions;
 
     private Builder() {
     }
@@ -132,7 +162,11 @@ public record TokenContext(PublicKey address,
           tags == null || tags.isEmpty() ? NO_TAGS : tags,
           dailyVolume,
           freezeAuthority,
-          mintAuthority
+          mintAuthority,
+          permanentDelegate,
+          createdAt,
+          mintedAt,
+          extensions
       );
     }
   }

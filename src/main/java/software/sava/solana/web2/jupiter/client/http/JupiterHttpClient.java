@@ -55,6 +55,12 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     return programLabels;
   });
 
+
+  public static void main(String[] args) {
+    final var client = JupiterClient.createClient(HttpClient.newHttpClient());
+    final var tokens = client.verifiedTokenMap().join();
+  }
+
   private static final Function<HttpResponse<byte[]>, List<MarketRecord>> MARKET_CACHE_PARSER = applyResponse(MarketRecord::parse);
 
   private final URI tokensEndpoint;
