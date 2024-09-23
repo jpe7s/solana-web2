@@ -113,57 +113,17 @@ public interface JupiterClient {
 
   CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final byte[] quoteResponseJson);
 
-
   default CompletableFuture<JupiterQuote> getQuote(final JupiterQuoteRequest quoteRequest) {
-    return getQuote(quoteRequest.amount(), quoteRequest);
+    return getQuote(quoteRequest.serialize());
   }
-
-  CompletableFuture<JupiterQuote> getQuote(final BigInteger amount, final JupiterQuoteRequest quoteRequest);
-
   CompletableFuture<JupiterQuote> getQuote(final BigInteger amount, final String query);
 
   CompletableFuture<JupiterQuote> getQuote(final String query);
 
-  CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder,
-                                        final JupiterQuote jupiterQuote,
-                                        final Duration requestTimeout);
-
-  CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder,
-                                        final byte[] quoteResponseJson,
-                                        final Duration requestTimeout);
-
-  CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix,
-                                        final JupiterQuote jupiterQuote,
-                                        final Duration requestTimeout);
-
-  CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix,
-                                        final byte[] quoteResponseJson,
-                                        final Duration requestTimeout);
-
-  CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
-                                             final JupiterQuote jupiterQuote,
-                                             final Duration requestTimeout);
-
-  CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
-                                             final byte[] quoteResponseJson,
-                                             final Duration requestTimeout);
-
-  CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
-                                             final JupiterQuote jupiterQuote,
-                                             final Duration requestTimeout);
-
-  CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
-                                             final byte[] quoteResponseJson,
-                                             final Duration requestTimeout);
-
   default CompletableFuture<JupiterQuote> getQuote(final JupiterQuoteRequest quoteRequest,
                                                    final Duration requestTimeout) {
-    return getQuote(quoteRequest.amount(), quoteRequest, requestTimeout);
+    return getQuote(quoteRequest.serialize(), requestTimeout);
   }
-
-  CompletableFuture<JupiterQuote> getQuote(final BigInteger amount,
-                                           final JupiterQuoteRequest quoteRequest,
-                                           final Duration requestTimeout);
 
   CompletableFuture<JupiterQuote> getQuote(final BigInteger amount,
                                            final String query,
@@ -171,6 +131,38 @@ public interface JupiterClient {
 
   CompletableFuture<JupiterQuote> getQuote(final String query,
                                            final Duration requestTimeout);
+
+  CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder,
+                                        final JupiterQuote jupiterQuote,
+                                        final Duration requestTimeout);
+
+  CompletableFuture<JupiterSwapTx> swap(final StringBuilder jsonBodyBuilder,
+                                        final byte[] quoteResponseJson,
+                                        final Duration requestTimeout);
+
+  CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix,
+                                        final JupiterQuote jupiterQuote,
+                                        final Duration requestTimeout);
+
+  CompletableFuture<JupiterSwapTx> swap(final String jsonBodyPrefix,
+                                        final byte[] quoteResponseJson,
+                                        final Duration requestTimeout);
+
+  CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
+                                             final JupiterQuote jupiterQuote,
+                                             final Duration requestTimeout);
+
+  CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
+                                             final byte[] quoteResponseJson,
+                                             final Duration requestTimeout);
+
+  CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
+                                             final JupiterQuote jupiterQuote,
+                                             final Duration requestTimeout);
+
+  CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
+                                             final byte[] quoteResponseJson,
+                                             final Duration requestTimeout);
 
   CompletableFuture<List<MarketRecord>> getMarketCache();
 }

@@ -4,12 +4,10 @@ import software.sava.core.accounts.PublicKey;
 import software.sava.rpc.json.http.client.JsonHttpClient;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterQuoteRequest;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag;
-import software.sava.solana.web2.jupiter.client.http.response.JupiterQuote;
-import software.sava.solana.web2.jupiter.client.http.response.JupiterSwapTx;
-import software.sava.solana.web2.jupiter.client.http.response.MarketRecord;
-import software.sava.solana.web2.jupiter.client.http.response.TokenContext;
+import software.sava.solana.web2.jupiter.client.http.response.*;
 
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.URI;
@@ -59,6 +57,40 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   public static void main(String[] args) {
     final var client = JupiterClient.createClient(HttpClient.newHttpClient());
     final var tokens = client.verifiedTokenMap().join();
+    final var sol = tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("SOL"))
+        .findFirst().orElseThrow();
+    final var usdc = tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("USDC"))
+        .findFirst().orElseThrow();
+    final var quoteRequest = JupiterQuoteRequest.buildRequest()
+        .swapMode(SwapMode.ExactIn)
+        .amount(usdc.fromDecimal(BigDecimal.ONE).toBigInteger())
+        .inputTokenMint(usdc.address())
+        .outputTokenMint(sol.address())
+        .slippageBps(2)
+        .allowDexes(List.of(
+            "1DEX",
+            "Cropper",
+            "Meteora",
+            "Meteora DLMM",
+            "Orca V2",
+            "OpenBook V2",
+            "Phoenix",
+            "Raydium",
+            "Raydium CLMM",
+            "Raydium CP",
+            "Saber",
+            "Saber (Decimals)",
+            "Sanctum",
+            "Sanctum Infinity",
+            "Whirlpool"
+        ))
+        .onlyDirectRoutes(true)
+        .create();
+
+    final var quote = client.getQuote(quoteRequest).join();
+    System.out.println(quote);
   }
 
   private static final Function<HttpResponse<byte[]>, List<MarketRecord>> MARKET_CACHE_PARSER = applyResponse(MarketRecord::parse);
@@ -240,11 +272,6 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<JupiterQuote> getQuote(final BigInteger amount, final JupiterQuoteRequest quoteRequest) {
-    return getQuote(amount, quoteRequest, requestTimeout);
-  }
-
-  @Override
   public CompletableFuture<JupiterQuote> getQuote(final BigInteger amount, final String query) {
     return getQuote(amount, query, requestTimeout);
   }
@@ -256,16 +283,10 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   @Override
   public CompletableFuture<JupiterQuote> getQuote(final BigInteger amount,
-                                                  final JupiterQuoteRequest quoteRequest,
-                                                  final Duration requestTimeout) {
-    return getQuote(amount, quoteRequest.serialize(), requestTimeout);
-  }
-
-  @Override
-  public CompletableFuture<JupiterQuote> getQuote(final BigInteger amount,
                                                   final String query,
                                                   final Duration requestTimeout) {
-    final var request = newRequest(String.format(quotePathFormat, amount, query), requestTimeout).GET().build();
+    final var pathAndQuery = String.format(quotePathFormat, amount, query);
+    final var request = newRequest(pathAndQuery, requestTimeout).GET().build();
     return this.httpClient.sendAsync(request, ofByteArray()).thenApply(QUOTE_PARSER);
   }
 
