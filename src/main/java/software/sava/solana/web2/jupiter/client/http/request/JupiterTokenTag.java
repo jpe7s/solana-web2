@@ -5,6 +5,7 @@ public enum JupiterTokenTag {
   verified,
   unknown,
   community,
+  deduplicated,
   deprecated,
   strict,
   lst,

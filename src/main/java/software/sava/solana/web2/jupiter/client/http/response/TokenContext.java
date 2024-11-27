@@ -50,13 +50,13 @@ public record TokenContext(PublicKey address,
       return verified;
     } else if (fieldEquals("community", buf, offset, len)) {
       return community;
-    } else if (fieldEquals("token-2022", buf, offset, len)) {
+    } else if (fieldEquals("token-2022", buf, offset, len) || fieldEquals("token_2022", buf, offset, len)) {
       return token_2022;
     } else if (fieldEquals("lst", buf, offset, len)) {
       return lst;
     } else if (fieldEquals("unknown", buf, offset, len)) {
       return unknown;
-    } else if (fieldEquals("birdeye-trending", buf, offset, len)) {
+    } else if (fieldEquals("birdeye-trending", buf, offset, len) || fieldEquals("birdeye_trending", buf, offset, len)) {
       return birdeye_trending;
     } else if (fieldEquals("clone", buf, offset, len)) {
       return clone;
@@ -66,6 +66,8 @@ public record TokenContext(PublicKey address,
       return strict;
     } else if (fieldEquals("moonshot", buf, offset, len)) {
       return moonshot;
+    } else if (fieldEquals("deduplicated", buf, offset, len)) {
+      return deduplicated;
     } else if (fieldEquals("deprecated", buf, offset, len)) {
       return deprecated;
     } else {

@@ -3,7 +3,7 @@ package software.sava.solana.web2.jito.client.http.response;
 import software.sava.rpc.json.http.request.Commitment;
 import software.sava.rpc.json.http.response.Context;
 import software.sava.rpc.json.http.response.RootBuilder;
-import software.sava.rpc.json.http.response.TxInstructionError;
+import software.sava.rpc.json.http.response.TransactionError;
 import systems.comodal.jsoniter.ContextFieldBufferPredicate;
 import systems.comodal.jsoniter.JsonIterator;
 import systems.comodal.jsoniter.ValueType;
@@ -16,7 +16,7 @@ public record BundleStatus(Context context,
                            String bundleId,
                            List<String> signatures,
                            long slot,
-                           TxInstructionError error,
+                           TransactionError error,
                            Commitment confirmationStatus,
                            Map<String, String> unhandledFields) {
 
@@ -54,7 +54,7 @@ public record BundleStatus(Context context,
     } else if (fieldEquals("slot", buf, offset, len)) {
       builder.slot = ji.readLong();
     } else if (fieldEquals("err", buf, offset, len)) {
-      builder.error = TxInstructionError.parseError(ji);
+      builder.error = TransactionError.parseError(ji);
     } else if (fieldEquals("confirmationStatus", buf, offset, len) || fieldEquals("confirmation_status", buf, offset, len)) {
       builder.confirmationStatus(ji.readString());
     } else {
@@ -71,7 +71,7 @@ public record BundleStatus(Context context,
     private String bundleId;
     private List<String> signatures;
     private long slot;
-    private TxInstructionError error;
+    private TransactionError error;
     private Commitment confirmationStatus;
     private Map<String, String> unhandledFields;
 
