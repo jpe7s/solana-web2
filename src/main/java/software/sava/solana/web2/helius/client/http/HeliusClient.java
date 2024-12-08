@@ -36,6 +36,12 @@ public interface HeliusClient {
 
   static HeliusClient createHttpClient(final URI endpoint,
                                        final HttpClient httpClient,
+                                       final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createHttpClient(endpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, null, applyResponse);
+  }
+
+  static HeliusClient createHttpClient(final URI endpoint,
+                                       final HttpClient httpClient,
                                        final Duration requestTimeout) {
     return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, null, null);
   }

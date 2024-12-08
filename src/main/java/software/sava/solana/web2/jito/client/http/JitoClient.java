@@ -37,10 +37,27 @@ public interface JitoClient {
   static JitoClient createHttpClient(final URI endpoint,
                                      final HttpClient httpClient,
                                      final Duration requestTimeout,
+                                     final Predicate<HttpResponse<byte[]>> applyResponse,
+                                     final Commitment defaultCommitment,
+                                     final String apiAuthKey) {
+    return JitoJsonRpcClient.createClient(endpoint, httpClient, requestTimeout, null, applyResponse, defaultCommitment, apiAuthKey);
+  }
+
+  static JitoClient createHttpClient(final URI endpoint,
+                                     final HttpClient httpClient,
+                                     final Duration requestTimeout,
                                      final UnaryOperator<HttpRequest.Builder> extendRequest,
                                      final Predicate<HttpResponse<byte[]>> applyResponse,
                                      final Commitment defaultCommitment) {
     return createHttpClient(endpoint, httpClient, requestTimeout, extendRequest, applyResponse, defaultCommitment, null);
+  }
+
+  static JitoClient createHttpClient(final URI endpoint,
+                                     final HttpClient httpClient,
+                                     final Duration requestTimeout,
+                                     final Predicate<HttpResponse<byte[]>> applyResponse,
+                                     final Commitment defaultCommitment) {
+    return createHttpClient(endpoint, httpClient, requestTimeout, null, applyResponse, defaultCommitment, null);
   }
 
   static JitoClient createHttpClient(final URI endpoint,
