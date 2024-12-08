@@ -6,6 +6,7 @@ import software.sava.solana.web2.jito.client.http.response.SendTxResult;
 
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Collection;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 public interface JitoClient {
 
@@ -25,18 +27,20 @@ public interface JitoClient {
   static JitoClient createHttpClient(final URI endpoint,
                                      final HttpClient httpClient,
                                      final Duration requestTimeout,
+                                     final UnaryOperator<HttpRequest.Builder> extendRequest,
                                      final Predicate<HttpResponse<byte[]>> applyResponse,
                                      final Commitment defaultCommitment,
                                      final String apiAuthKey) {
-    return new JitoJsonRpcClient(endpoint, httpClient, requestTimeout, applyResponse, defaultCommitment, apiAuthKey);
+    return JitoJsonRpcClient.createClient(endpoint, httpClient, requestTimeout, extendRequest, applyResponse, defaultCommitment, apiAuthKey);
   }
 
   static JitoClient createHttpClient(final URI endpoint,
                                      final HttpClient httpClient,
                                      final Duration requestTimeout,
+                                     final UnaryOperator<HttpRequest.Builder> extendRequest,
                                      final Predicate<HttpResponse<byte[]>> applyResponse,
                                      final Commitment defaultCommitment) {
-    return createHttpClient(endpoint, httpClient, requestTimeout, applyResponse, defaultCommitment, null);
+    return createHttpClient(endpoint, httpClient, requestTimeout, extendRequest, applyResponse, defaultCommitment, null);
   }
 
   static JitoClient createHttpClient(final URI endpoint,
@@ -44,14 +48,14 @@ public interface JitoClient {
                                      final Duration requestTimeout,
                                      final Commitment defaultCommitment,
                                      final String apiAuthKey) {
-    return new JitoJsonRpcClient(endpoint, httpClient, requestTimeout, null, defaultCommitment, apiAuthKey);
+    return createHttpClient(endpoint, httpClient, requestTimeout, null, null, defaultCommitment, apiAuthKey);
   }
 
   static JitoClient createHttpClient(final URI endpoint,
                                      final HttpClient httpClient,
                                      final Duration requestTimeout,
                                      final Commitment defaultCommitment) {
-    return createHttpClient(endpoint, httpClient, requestTimeout, null, defaultCommitment, null);
+    return createHttpClient(endpoint, httpClient, requestTimeout, null, null, defaultCommitment, null);
   }
 
   URI endpoint();

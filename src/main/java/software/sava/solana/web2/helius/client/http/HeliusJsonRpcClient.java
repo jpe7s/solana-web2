@@ -7,6 +7,7 @@ import software.sava.solana.web2.helius.client.http.response.PriorityFeesEstimat
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static software.sava.solana.web2.helius.client.http.request.PriorityFeeRequest.serializeParams;
 import static software.sava.solana.web2.helius.client.http.request.PriorityFeeRequest.serializeRecommendedParams;
@@ -29,8 +31,9 @@ final class HeliusJsonRpcClient extends JsonRpcHttpClient implements HeliusClien
   HeliusJsonRpcClient(final URI endpoint,
                       final HttpClient httpClient,
                       final Duration requestTimeout,
+                      final UnaryOperator<HttpRequest.Builder> extendRequest,
                       final Predicate<HttpResponse<byte[]>> applyResponse) {
-    super(endpoint, httpClient, requestTimeout, applyResponse);
+    super(endpoint, httpClient, requestTimeout, extendRequest, applyResponse);
     this.id = new AtomicLong(System.currentTimeMillis());
   }
 

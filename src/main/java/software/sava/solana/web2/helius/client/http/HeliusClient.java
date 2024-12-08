@@ -7,11 +7,13 @@ import software.sava.solana.web2.helius.client.http.response.PriorityFeesEstimat
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static software.sava.solana.web2.helius.client.http.HeliusJsonRpcClient.DEFAULT_REQUEST_TIMEOUT;
 
@@ -20,20 +22,22 @@ public interface HeliusClient {
   static HeliusClient createHttpClient(final URI endpoint,
                                        final HttpClient httpClient,
                                        final Duration requestTimeout,
+                                       final UnaryOperator<HttpRequest.Builder> extendRequest,
                                        final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, applyResponse);
+    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, extendRequest, applyResponse);
   }
 
   static HeliusClient createHttpClient(final URI endpoint,
                                        final HttpClient httpClient,
+                                       final UnaryOperator<HttpRequest.Builder> extendRequest,
                                        final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return createHttpClient(endpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, applyResponse);
+    return createHttpClient(endpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, extendRequest, applyResponse);
   }
 
   static HeliusClient createHttpClient(final URI endpoint,
                                        final HttpClient httpClient,
                                        final Duration requestTimeout) {
-    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, null);
+    return new HeliusJsonRpcClient(endpoint, httpClient, requestTimeout, null, null);
   }
 
   static HeliusClient createHttpClient(final URI endpoint, final HttpClient httpClient) {

@@ -11,6 +11,7 @@ import software.sava.solana.web2.jupiter.client.http.response.TokenContext;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Collection;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static software.sava.solana.web2.jupiter.client.http.JupiterHttpClient.DEFAULT_REQUEST_TIMEOUT;
 
@@ -31,37 +33,71 @@ public interface JupiterClient {
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
                                     final Duration requestTimeout,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, applyResponse);
+    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
   }
 
   static JupiterClient createClient(final URI quoteEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return createClient(quoteEndpoint, tokensEndpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, applyResponse);
+    return createClient(
+        quoteEndpoint,
+        tokensEndpoint,
+        httpClient,
+        DEFAULT_REQUEST_TIMEOUT,
+        extendRequest,
+        applyResponse
+    );
   }
 
   static JupiterClient createClient(final HttpClient httpClient,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return createClient(URI.create(PUBLIC_QUOTE_ENDPOINT), URI.create(PUBLIC_TOKEN_LIST_ENDPOINT), httpClient, applyResponse);
+    return createClient(
+        URI.create(PUBLIC_QUOTE_ENDPOINT),
+        URI.create(PUBLIC_TOKEN_LIST_ENDPOINT),
+        httpClient,
+        extendRequest,
+        applyResponse
+    );
   }
 
   static JupiterClient createClient(final URI quoteEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
                                     final Duration requestTimeout) {
-    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, null);
+    return new JupiterHttpClient(
+        quoteEndpoint,
+        tokensEndpoint,
+        httpClient,
+        requestTimeout,
+        null, null
+    );
   }
 
   static JupiterClient createClient(final URI quoteEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient) {
-    return createClient(quoteEndpoint, tokensEndpoint, httpClient, DEFAULT_REQUEST_TIMEOUT, null);
+    return createClient(
+        quoteEndpoint,
+        tokensEndpoint,
+        httpClient,
+        DEFAULT_REQUEST_TIMEOUT,
+        null, null
+    );
   }
 
   static JupiterClient createClient(final HttpClient httpClient) {
-    return createClient(URI.create(PUBLIC_QUOTE_ENDPOINT), URI.create(PUBLIC_TOKEN_LIST_ENDPOINT), httpClient, DEFAULT_REQUEST_TIMEOUT, null);
+    return createClient(
+        URI.create(PUBLIC_QUOTE_ENDPOINT),
+        URI.create(PUBLIC_TOKEN_LIST_ENDPOINT),
+        httpClient,
+        DEFAULT_REQUEST_TIMEOUT,
+        null, null
+    );
   }
 
   URI endpoint();
@@ -116,6 +152,7 @@ public interface JupiterClient {
   default CompletableFuture<JupiterQuote> getQuote(final JupiterQuoteRequest quoteRequest) {
     return getQuote(quoteRequest.serialize());
   }
+
   CompletableFuture<JupiterQuote> getQuote(final BigInteger amount, final String query);
 
   CompletableFuture<JupiterQuote> getQuote(final String query);

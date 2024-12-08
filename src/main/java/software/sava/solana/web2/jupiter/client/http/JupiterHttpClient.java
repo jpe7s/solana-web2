@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static java.net.http.HttpResponse.BodyHandlers.ofByteArray;
@@ -108,8 +109,9 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
                     final URI tokensEndpoint,
                     final HttpClient httpClient,
                     final Duration requestTimeout,
+                    final UnaryOperator<HttpRequest.Builder> extendRequest,
                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    super(quoteEndpoint, httpClient, requestTimeout, applyResponse);
+    super(quoteEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
     this.tokensEndpoint = tokensEndpoint;
     this.tokensPath = tokensEndpoint.resolve("/tokens");
     this.tokensWithMarketsPath = tokensPath.resolve("tokens_with_markets");
@@ -120,13 +122,13 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
         this.quotePath = "/quote?";
         this.swapURI = quoteEndpoint.resolve("/swap");
         this.swapInstructionsURI = quoteEndpoint.resolve("/swap-instructions");
-        this.programLabelsRequest = newGetRequest(quoteEndpoint.resolve("/program-id-to-label")).build();
+        this.programLabelsRequest = newRequest(quoteEndpoint.resolve("/program-id-to-label")).build();
       } else {
         this.quotePathFormat = "/v6/quote?amount=%s&%s";
         this.quotePath = "/v6/quote?";
         this.swapURI = quoteEndpoint.resolve("/v6/swap");
         this.swapInstructionsURI = quoteEndpoint.resolve("/v6/swap-instructions");
-        this.programLabelsRequest = newGetRequest(quoteEndpoint.resolve("/v6/program-id-to-label")).build();
+        this.programLabelsRequest = newRequest(quoteEndpoint.resolve("/v6/program-id-to-label")).build();
       }
     } catch (final UnknownHostException e) {
       throw new UncheckedIOException(e);

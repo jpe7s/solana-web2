@@ -42,7 +42,7 @@ final class BirdeyeHttpClient extends JsonHttpClient implements BirdeyeClient {
 
   @Override
   public CompletableFuture<TokenList> tokenList(final TokenListSortBy sortBy, final SortType sortType, final int offset, final int limit) {
-    final var request = newGetRequest(endpoint.resolve(format(
+    final var request = newRequest(endpoint.resolve(format(
         "/public/tokenlist?sort_by=%s&sort_type=%s&offset=%d&limit=%d",
         sortBy, sortType, offset, limit)));
     setHeaders(request);

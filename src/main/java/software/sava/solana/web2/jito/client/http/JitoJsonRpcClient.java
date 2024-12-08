@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -43,27 +44,48 @@ final class JitoJsonRpcClient extends JsonRpcHttpClient implements JitoClient {
   private final URI transactionsURI;
   private final URI bundlyOnlyTxURI;
   private final Commitment defaultCommitment;
-  private final String apiAuthKey;
 
-  JitoJsonRpcClient(final URI endpoint,
-                    final HttpClient httpClient,
-                    final Duration requestTimeout,
-                    final Predicate<HttpResponse<byte[]>> applyResponse,
-                    final Commitment defaultCommitment,
-                    final String apiAuthKey) {
-    super(endpoint, httpClient, requestTimeout, applyResponse);
+  private JitoJsonRpcClient(final URI endpoint,
+                            final HttpClient httpClient,
+                            final Duration requestTimeout,
+                            final UnaryOperator<HttpRequest.Builder> extendRequest,
+                            final Predicate<HttpResponse<byte[]>> applyResponse,
+                            final Commitment defaultCommitment) {
+    super(
+        endpoint,
+        httpClient,
+        requestTimeout,
+        extendRequest,
+        applyResponse
+    );
     this.bundlesURI = endpoint.resolve("/api/v1/bundles");
     this.transactionsURI = endpoint.resolve("/api/v1/transactions");
     this.bundlyOnlyTxURI = this.transactionsURI.resolve("/api/v1/transactions?bundleOnly=true");
     this.id = new AtomicLong(System.currentTimeMillis());
     this.defaultCommitment = defaultCommitment;
-    this.apiAuthKey = apiAuthKey;
   }
 
-  @Override
-  protected HttpRequest.Builder newRequest(final URI endpoint, final Duration requestTimeout) {
-    final var request = super.newRequest(endpoint, requestTimeout);
-    return apiAuthKey == null ? request : request.header("x-jito-auth", apiAuthKey);
+  static JitoJsonRpcClient createClient(final URI endpoint,
+                                        final HttpClient httpClient,
+                                        final Duration requestTimeout,
+                                        final UnaryOperator<HttpRequest.Builder> extendRequest,
+                                        final Predicate<HttpResponse<byte[]>> applyResponse,
+                                        final Commitment defaultCommitment,
+                                        final String apiAuthKey) {
+    final UnaryOperator<HttpRequest.Builder> _extendRequest;
+    if (apiAuthKey != null) {
+      _extendRequest = r -> extendRequest.apply(r.header("x-jito-auth", apiAuthKey));
+    } else {
+      _extendRequest = extendRequest;
+    }
+    return new JitoJsonRpcClient(
+        endpoint,
+        httpClient,
+        requestTimeout,
+        _extendRequest,
+        applyResponse,
+        defaultCommitment
+    );
   }
 
   @Override
