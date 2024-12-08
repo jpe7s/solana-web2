@@ -41,6 +41,14 @@ public interface JupiterClient {
   static JupiterClient createClient(final URI quoteEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
+                                    final Duration requestTimeout,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, null, applyResponse);
+  }
+
+  static JupiterClient createClient(final URI quoteEndpoint,
+                                    final URI tokensEndpoint,
+                                    final HttpClient httpClient,
                                     final UnaryOperator<HttpRequest.Builder> extendRequest,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
     return createClient(
@@ -49,6 +57,20 @@ public interface JupiterClient {
         httpClient,
         DEFAULT_REQUEST_TIMEOUT,
         extendRequest,
+        applyResponse
+    );
+  }
+
+  static JupiterClient createClient(final URI quoteEndpoint,
+                                    final URI tokensEndpoint,
+                                    final HttpClient httpClient,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(
+        quoteEndpoint,
+        tokensEndpoint,
+        httpClient,
+        DEFAULT_REQUEST_TIMEOUT,
+        null,
         applyResponse
     );
   }
