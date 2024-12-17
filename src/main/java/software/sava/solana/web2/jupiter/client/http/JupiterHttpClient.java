@@ -57,6 +57,10 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   public static void main(String[] args) {
     final var client = JupiterClient.createClient(HttpClient.newHttpClient());
+
+    final var jupToken = client.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
+    System.out.println(jupToken);
+
     final var tokens = client.verifiedTokenMap().join();
     final var sol = tokens.values().stream()
         .filter(tokenContext -> tokenContext.symbol().equals("SOL"))
@@ -97,6 +101,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   private static final Function<HttpResponse<byte[]>, List<MarketRecord>> MARKET_CACHE_PARSER = applyResponse(MarketRecord::parse);
 
   private final URI tokensEndpoint;
+  private final URI tokenPath;
   private final URI tokensPath;
   private final URI tokensWithMarketsPath;
   private final String quotePathFormat;
@@ -113,8 +118,9 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
                     final Predicate<HttpResponse<byte[]>> applyResponse) {
     super(quoteEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
     this.tokensEndpoint = tokensEndpoint;
-    this.tokensPath = tokensEndpoint.resolve("/tokens");
-    this.tokensWithMarketsPath = tokensPath.resolve("tokens_with_markets");
+    this.tokenPath = tokensEndpoint.resolve("/token/");
+    this.tokensPath = tokensEndpoint.resolve("/tokens/");
+    this.tokensWithMarketsPath = tokensEndpoint.resolve("/tokens_with_markets");
     try {
       final var inetAddress = InetAddress.getByName(quoteEndpoint.getHost());
       if (inetAddress.isLoopbackAddress() || inetAddress.isAnyLocalAddress()) {
@@ -137,7 +143,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   @Override
   public CompletableFuture<TokenContext> token(final PublicKey mint) {
-    final var url = tokensPath.resolve(mint.toBase58());
+    final var url = tokenPath.resolve(mint.toBase58());
     return sendGetRequest(url, TOKEN);
   }
 

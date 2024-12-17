@@ -147,6 +147,7 @@ public interface JupiterClient {
     return tokenMap(JupiterTokenTag.verified);
   }
 
+  @Deprecated
   CompletableFuture<Map<PublicKey, TokenContext>> tokensWithLiquidMarkets();
 
   default CompletableFuture<Map<PublicKey, TokenContext>> liquidStakingTokens() {
