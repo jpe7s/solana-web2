@@ -11,11 +11,15 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static software.sava.solana.web2.sanctum.client.http.SanctumHttpClient.DEFAULT_REQUEST_TIMEOUT;
@@ -28,8 +32,97 @@ public interface SanctumClient {
   static SanctumClient createClient(final URI apiEndpoint,
                                     final URI extraApiEndpoint,
                                     final HttpClient httpClient,
+                                    final Duration requestTimeout,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return new SanctumHttpClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        httpClient,
+        requestTimeout,
+        extendRequest,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final HttpClient httpClient,
+                                    final Duration requestTimeout,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return new SanctumHttpClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        httpClient,
+        requestTimeout,
+        null,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final HttpClient httpClient,
+                                    final Duration requestTimeout,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest) {
+    return new SanctumHttpClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        httpClient,
+        requestTimeout,
+        extendRequest,
+        null
+    );
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final HttpClient httpClient,
                                     final Duration requestTimeout) {
-    return new SanctumHttpClient(apiEndpoint, extraApiEndpoint, httpClient, requestTimeout);
+    return createClient(apiEndpoint, extraApiEndpoint, httpClient, requestTimeout, null, null);
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final HttpClient httpClient,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        httpClient,
+        DEFAULT_REQUEST_TIMEOUT,
+        extendRequest,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final HttpClient httpClient,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        httpClient,
+        DEFAULT_REQUEST_TIMEOUT,
+        null,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final HttpClient httpClient,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest) {
+    return createClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        httpClient,
+        DEFAULT_REQUEST_TIMEOUT,
+        extendRequest,
+        null
+    );
   }
 
   static SanctumClient createClient(final URI apiEndpoint,
@@ -38,16 +131,103 @@ public interface SanctumClient {
     return createClient(apiEndpoint, extraApiEndpoint, httpClient, DEFAULT_REQUEST_TIMEOUT);
   }
 
-  static SanctumClient createClient() {
-    return createClient(URI.create(PUBLIC_ENDPOINT), URI.create(EXTRA_API_ENDPOINT));
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        HttpClient.newHttpClient(),
+        DEFAULT_REQUEST_TIMEOUT,
+        extendRequest,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        HttpClient.newHttpClient(),
+        DEFAULT_REQUEST_TIMEOUT,
+        null,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final URI apiEndpoint,
+                                    final URI extraApiEndpoint,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest) {
+    return createClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        HttpClient.newHttpClient(),
+        DEFAULT_REQUEST_TIMEOUT,
+        extendRequest,
+        null
+    );
   }
 
   static SanctumClient createClient(final URI apiEndpoint, final URI extraApiEndpoint) {
-    return createClient(apiEndpoint, extraApiEndpoint, HttpClient.newHttpClient());
+    return createClient(
+        apiEndpoint,
+        extraApiEndpoint,
+        HttpClient.newHttpClient(),
+        DEFAULT_REQUEST_TIMEOUT,
+        null,
+        null
+    );
+  }
+
+  static SanctumClient createClient(final HttpClient httpClient,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(
+        URI.create(PUBLIC_ENDPOINT),
+        URI.create(EXTRA_API_ENDPOINT),
+        httpClient,
+        extendRequest,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final HttpClient httpClient,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(httpClient, null, applyResponse);
+  }
+
+  static SanctumClient createClient(final HttpClient httpClient,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest) {
+    return createClient(httpClient, extendRequest, null);
+  }
+
+  static SanctumClient createClient(final UnaryOperator<HttpRequest.Builder> extendRequest,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient(
+        URI.create(PUBLIC_ENDPOINT),
+        URI.create(EXTRA_API_ENDPOINT),
+        extendRequest,
+        applyResponse
+    );
+  }
+
+  static SanctumClient createClient(final UnaryOperator<HttpRequest.Builder> extendRequest) {
+    return createClient(extendRequest, null);
+  }
+
+  static SanctumClient createClient(final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return createClient((UnaryOperator<HttpRequest.Builder>) null, applyResponse);
   }
 
   static SanctumClient createClient(final HttpClient httpClient) {
-    return createClient(URI.create(PUBLIC_ENDPOINT), URI.create(EXTRA_API_ENDPOINT), httpClient);
+    return createClient(httpClient, null, null);
+  }
+
+  static SanctumClient createClient() {
+    return createClient((UnaryOperator<HttpRequest.Builder>) null, null);
   }
 
   URI endpoint();

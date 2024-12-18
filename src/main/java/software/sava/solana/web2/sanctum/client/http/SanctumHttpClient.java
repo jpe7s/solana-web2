@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static software.sava.core.util.LamportDecimal.LAMPORT_DIGITS;
@@ -60,8 +62,10 @@ final class SanctumHttpClient extends JsonHttpClient implements SanctumClient {
   SanctumHttpClient(final URI apiEndpoint,
                     final URI extraApiEndpoint,
                     final HttpClient httpClient,
-                    final Duration requestTimeout) {
-    super(apiEndpoint, httpClient, requestTimeout);
+                    final Duration requestTimeout,
+                    final UnaryOperator<HttpRequest.Builder> extendRequest,
+                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    super(apiEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
     this.swapURI = apiEndpoint.resolve("/v1/swap");
     this.extraApiEndpoint = extraApiEndpoint;
   }
