@@ -1,10 +1,21 @@
 package software.sava.solana.web2.jupiter.client.http.request;
 
 import software.sava.core.accounts.PublicKey;
+import software.sava.rpc.json.PublicKeyEncoding;
 import software.sava.solana.web2.jupiter.client.http.response.SwapMode;
+import systems.comodal.jsoniter.CharBufferFunction;
+import systems.comodal.jsoniter.FieldBufferPredicate;
+import systems.comodal.jsoniter.JsonIterator;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+
+import static software.sava.solana.web2.jupiter.client.http.response.SwapMode.ExactIn;
+import static software.sava.solana.web2.jupiter.client.http.response.SwapMode.ExactOut;
+import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
+import static systems.comodal.jsoniter.JsonIterator.fieldEqualsIgnoreCase;
 
 record JupiterQuoteRequestRecord(SwapMode swapMode,
                                  PublicKey inputTokenMint,
@@ -13,12 +24,85 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
                                  int slippageBps,
                                  Collection<String> excludeDexes,
                                  Collection<String> allowDexes,
+                                 boolean restrictIntermediateTokens,
                                  boolean onlyDirectRoutes,
                                  boolean asLegacyTransaction,
                                  int platformFeeBps,
-                                 int maxAccounts) implements JupiterQuoteRequest {
+                                 int maxAccounts,
+                                 boolean autoSlippage,
+                                 int maxAutoSlippageBps,
+                                 int autoSlippageCollisionUsdValue) implements JupiterQuoteRequest {
 
-  static final class JupiterQuoteRequestBuilder implements Builder {
+  private static final CharBufferFunction<SwapMode> PARSE_MODE = (buf, offset, len) -> {
+    if (fieldEqualsIgnoreCase("ExactIn", buf, offset, len)) {
+      return ExactIn;
+    } else if (fieldEqualsIgnoreCase("ExactOut", buf, offset, len)) {
+      return ExactOut;
+    } else {
+      return null;
+    }
+  };
+
+  static final class Parser implements FieldBufferPredicate {
+
+    private final JupiterQuoteRequest.Builder builder;
+
+    Parser(final JupiterQuoteRequest prototype) {
+      this.builder = JupiterQuoteRequest.buildRequest(prototype);
+    }
+
+    JupiterQuoteRequest createRequest() {
+      return builder.create();
+    }
+
+    private static List<String> readStringArray(final JsonIterator ji) {
+      final var dexes = new ArrayList<String>();
+      while (ji.readArray()) {
+        dexes.add(ji.readString());
+      }
+      return List.copyOf(dexes);
+    }
+
+    @Override
+    public boolean test(final char[] buf, final int offset, final int len, final JsonIterator ji) {
+      if (fieldEquals("amount", buf, offset, len)) {
+        builder.amount(ji.readLong());
+      } else if (fieldEquals("swapMode", buf, offset, len)) {
+        builder.swapMode(ji.applyChars(PARSE_MODE));
+      } else if (fieldEquals("inputTokenMint", buf, offset, len)) {
+        builder.inputTokenMint(PublicKeyEncoding.parseBase58Encoded(ji));
+      } else if (fieldEquals("outputTokenMint", buf, offset, len)) {
+        builder.outputTokenMint(PublicKeyEncoding.parseBase58Encoded(ji));
+      } else if (fieldEquals("slippageBps", buf, offset, len)) {
+        builder.slippageBps(ji.readInt());
+      } else if (fieldEquals("excludeDexes", buf, offset, len)) {
+        builder.allowDexes(readStringArray(ji));
+      } else if (fieldEquals("allowDexes", buf, offset, len)) {
+        builder.allowDexes(readStringArray(ji));
+      } else if (fieldEquals("restrictIntermediateTokens", buf, offset, len)) {
+        builder.restrictIntermediateTokens(ji.readBoolean());
+      } else if (fieldEquals("onlyDirectRoutes", buf, offset, len)) {
+        builder.onlyDirectRoutes(ji.readBoolean());
+      } else if (fieldEquals("asLegacyTransaction", buf, offset, len)) {
+        builder.asLegacyTransaction(ji.readBoolean());
+      } else if (fieldEquals("platformFeeBps", buf, offset, len)) {
+        builder.platformFeeBps(ji.readInt());
+      } else if (fieldEquals("maxAccounts", buf, offset, len)) {
+        builder.maxAccounts(ji.readInt());
+      } else if (fieldEquals("autoSlippage", buf, offset, len)) {
+        builder.autoSlippage(ji.readBoolean());
+      } else if (fieldEquals("maxAutoSlippageBps", buf, offset, len)) {
+        builder.maxAutoSlippageBps(ji.readInt());
+      } else if (fieldEquals("autoSlippageCollisionUsdValue", buf, offset, len)) {
+        builder.autoSlippageCollisionUsdValue(ji.readInt());
+      } else {
+        ji.skip();
+      }
+      return true;
+    }
+  }
+
+  static final class BuilderImpl implements Builder {
 
     private BigInteger amount;
     private SwapMode swapMode;
@@ -27,12 +111,34 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     private int slippageBps;
     private Collection<String> excludeDexes;
     private Collection<String> allowDexes;
+    private boolean restrictIntermediateTokens;
     private boolean onlyDirectRoutes;
     private boolean asLegacyTransaction;
     private int platformFeeBps;
     private int maxAccounts;
+    private boolean autoSlippage;
+    private int maxAutoSlippageBps;
+    private int autoSlippageCollisionUsdValue;
 
-    JupiterQuoteRequestBuilder() {
+    BuilderImpl() {
+    }
+
+    BuilderImpl(final JupiterQuoteRequest prototype) {
+      this.amount = prototype.amount();
+      this.swapMode = prototype.swapMode();
+      this.inputTokenMint = prototype.inputTokenMint();
+      this.outputTokenMint = prototype.outputTokenMint();
+      this.slippageBps = prototype.slippageBps();
+      this.excludeDexes = prototype.excludeDexes();
+      this.allowDexes = prototype.allowDexes();
+      this.restrictIntermediateTokens = prototype.restrictIntermediateTokens();
+      this.onlyDirectRoutes = prototype.onlyDirectRoutes();
+      this.asLegacyTransaction = prototype.asLegacyTransaction();
+      this.platformFeeBps = prototype.platformFeeBps();
+      this.maxAccounts = prototype.maxAccounts();
+      this.autoSlippage = prototype.autoSlippage();
+      this.maxAutoSlippageBps = prototype.maxAutoSlippageBps();
+      this.autoSlippageCollisionUsdValue = prototype.autoSlippageCollisionUsdValue();
     }
 
     @Override
@@ -44,10 +150,15 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
           slippageBps,
           excludeDexes,
           allowDexes,
+          restrictIntermediateTokens,
           onlyDirectRoutes,
           asLegacyTransaction,
           platformFeeBps,
-          maxAccounts);
+          maxAccounts,
+          autoSlippage,
+          maxAutoSlippageBps,
+          autoSlippageCollisionUsdValue
+      );
     }
 
     @Override
@@ -89,6 +200,12 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     @Override
     public Builder allowDexes(final Collection<String> allowDexes) {
       this.allowDexes = allowDexes;
+      return this;
+    }
+
+    @Override
+    public Builder restrictIntermediateTokens(final boolean restrictIntermediateTokens) {
+      this.restrictIntermediateTokens = restrictIntermediateTokens;
       return this;
     }
 
@@ -152,6 +269,11 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     }
 
     @Override
+    public boolean restrictIntermediateTokens() {
+      return restrictIntermediateTokens;
+    }
+
+    @Override
     public boolean onlyDirectRoutes() {
       return onlyDirectRoutes;
     }
@@ -169,6 +291,39 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     @Override
     public int maxAccounts() {
       return maxAccounts;
+    }
+
+    @Override
+    public int autoSlippageCollisionUsdValue() {
+      return autoSlippageCollisionUsdValue;
+    }
+
+    @Override
+    public BuilderImpl autoSlippageCollisionUsdValue(final int autoSlippageCollisionUsdValue) {
+      this.autoSlippageCollisionUsdValue = autoSlippageCollisionUsdValue;
+      return this;
+    }
+
+    @Override
+    public int maxAutoSlippageBps() {
+      return maxAutoSlippageBps;
+    }
+
+    @Override
+    public BuilderImpl maxAutoSlippageBps(final int maxAutoSlippageBps) {
+      this.maxAutoSlippageBps = maxAutoSlippageBps;
+      return this;
+    }
+
+    @Override
+    public boolean autoSlippage() {
+      return autoSlippage;
+    }
+
+    @Override
+    public BuilderImpl autoSlippage(final boolean autoSlippage) {
+      this.autoSlippage = autoSlippage;
+      return this;
     }
   }
 }

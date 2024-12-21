@@ -2,6 +2,7 @@ package software.sava.solana.web2.jupiter.client.http.request;
 
 import software.sava.core.accounts.PublicKey;
 import software.sava.solana.web2.jupiter.client.http.response.SwapMode;
+import systems.comodal.jsoniter.JsonIterator;
 
 import java.math.BigInteger;
 import java.net.URLEncoder;
@@ -12,7 +13,22 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public interface JupiterQuoteRequest {
 
   static Builder buildRequest() {
-    return new JupiterQuoteRequestRecord.JupiterQuoteRequestBuilder();
+    return new JupiterQuoteRequestRecord.BuilderImpl();
+  }
+
+  static Builder buildRequest(final JupiterQuoteRequest prototype) {
+    return prototype == null ? buildRequest() : new JupiterQuoteRequestRecord.BuilderImpl(prototype);
+  }
+
+  static JupiterQuoteRequest parseRequest(final JupiterQuoteRequest prototype,
+                                          final JsonIterator ji) {
+    final var parser = new JupiterQuoteRequestRecord.Parser(prototype);
+    ji.testObject(parser);
+    return parser.createRequest();
+  }
+
+  static JupiterQuoteRequest parseRequest(final JsonIterator ji) {
+    return parseRequest(null, ji);
   }
 
   BigInteger amount();
@@ -28,6 +44,8 @@ public interface JupiterQuoteRequest {
   Collection<String> excludeDexes();
 
   Collection<String> allowDexes();
+
+  boolean restrictIntermediateTokens();
 
   boolean onlyDirectRoutes();
 
@@ -59,6 +77,9 @@ public interface JupiterQuoteRequest {
     if (allowDexes != null && !allowDexes.isEmpty()) {
       builder.append("&dexes=").append(URLEncoder.encode(String.join(",", allowDexes), US_ASCII));
     }
+    if (restrictIntermediateTokens()) {
+      builder.append("&restrictIntermediateTokens=true");
+    }
     if (onlyDirectRoutes()) {
       builder.append("&onlyDirectRoutes=true");
     }
@@ -71,8 +92,23 @@ public interface JupiterQuoteRequest {
     if (maxAccounts() > 0) {
       builder.append("&maxAccounts=").append(maxAccounts());
     }
+    if (autoSlippage()) {
+      builder.append("&autoSlippage=").append(autoSlippage());
+      if (maxAutoSlippageBps() > 0) {
+        builder.append("&maxAutoSlippageBps=").append(maxAutoSlippageBps());
+      }
+      if (autoSlippageCollisionUsdValue() > 0) {
+        builder.append("&autoSlippageCollisionUsdValue=").append(autoSlippageCollisionUsdValue());
+      }
+    }
     return builder.toString();
   }
+
+  boolean autoSlippage();
+
+  int maxAutoSlippageBps();
+
+  int autoSlippageCollisionUsdValue();
 
   interface Builder extends JupiterQuoteRequest {
 
@@ -96,6 +132,8 @@ public interface JupiterQuoteRequest {
 
     Builder allowDexes(final Collection<String> allowDexes);
 
+    Builder restrictIntermediateTokens(boolean restrictIntermediateTokens);
+
     Builder onlyDirectRoutes(final boolean onlyDirectRoutes);
 
     Builder asLegacyTransaction(final boolean asLegacyTransaction);
@@ -103,5 +141,19 @@ public interface JupiterQuoteRequest {
     Builder platformFeeBps(final int platformFeeBps);
 
     Builder maxAccounts(final int maxAccounts);
+
+    boolean restrictIntermediateTokens();
+
+    int autoSlippageCollisionUsdValue();
+
+    JupiterQuoteRequestRecord.BuilderImpl autoSlippageCollisionUsdValue(int autoSlippageCollisionUsdValue);
+
+    int maxAutoSlippageBps();
+
+    JupiterQuoteRequestRecord.BuilderImpl maxAutoSlippageBps(int maxAutoSlippageBps);
+
+    boolean autoSlippage();
+
+    JupiterQuoteRequestRecord.BuilderImpl autoSlippage(boolean autoSlippage);
   }
 }

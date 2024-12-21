@@ -13,7 +13,9 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
                                  boolean restrictIntermediateTokens,
                                  boolean useTokenLedger,
                                  PublicKey destinationTokenAccount,
-                                 boolean skipUserAccountsRpcCalls) {
+                                 boolean skipUserAccountsRpcCalls,
+                                 int minBps,
+                                 int maxBps) {
 
   public static Builder buildRequest() {
     return new Builder();
@@ -53,6 +55,12 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
     if (skipUserAccountsRpcCalls) {
       builder.append(",\"skipUserAccountsRpcCalls\":true");
     }
+    if (maxBps > 0) {
+      builder.append(String.format("""
+              ,"dynamicSlippage": {"minBps": %d, "maxBps": %d}""",
+          minBps, maxBps
+      ));
+    }
     return builder.append(",\"quoteResponse\":");
   }
 
@@ -70,6 +78,8 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
     private boolean useTokenLedger;
     private PublicKey destinationTokenAccount;
     private boolean skipUserAccountsRpcCalls;
+    private int minBps;
+    private int maxBps;
 
     private Builder() {
     }
@@ -87,8 +97,24 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
           restrictIntermediateTokens,
           useTokenLedger,
           destinationTokenAccount,
-          skipUserAccountsRpcCalls
+          skipUserAccountsRpcCalls,
+          minBps,
+          maxBps
       );
+    }
+
+    public Builder dynamicSlippage(final int minBps, final int maxBps) {
+      this.minBps = minBps;
+      this.maxBps = maxBps;
+      return this;
+    }
+
+    public int minBps() {
+      return this.minBps;
+    }
+
+    public int maxBps() {
+      return this.maxBps;
     }
 
     public Builder userPublicKey(final PublicKey userPublicKey) {
