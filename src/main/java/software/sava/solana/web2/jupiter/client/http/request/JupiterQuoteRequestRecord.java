@@ -22,8 +22,8 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
                                  BigInteger amount,
                                  PublicKey outputTokenMint,
                                  int slippageBps,
+                                 Collection<String> dexes,
                                  Collection<String> excludeDexes,
-                                 Collection<String> allowDexes,
                                  boolean restrictIntermediateTokens,
                                  boolean onlyDirectRoutes,
                                  boolean asLegacyTransaction,
@@ -75,10 +75,10 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
         builder.outputTokenMint(PublicKeyEncoding.parseBase58Encoded(ji));
       } else if (fieldEquals("slippageBps", buf, offset, len)) {
         builder.slippageBps(ji.readInt());
+      } else if (fieldEquals("dexes", buf, offset, len)) {
+        builder.dexes(readStringArray(ji));
       } else if (fieldEquals("excludeDexes", buf, offset, len)) {
-        builder.allowDexes(readStringArray(ji));
-      } else if (fieldEquals("allowDexes", buf, offset, len)) {
-        builder.allowDexes(readStringArray(ji));
+        builder.excludeDexes(readStringArray(ji));
       } else if (fieldEquals("restrictIntermediateTokens", buf, offset, len)) {
         builder.restrictIntermediateTokens(ji.readBoolean());
       } else if (fieldEquals("onlyDirectRoutes", buf, offset, len)) {
@@ -109,8 +109,8 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     private PublicKey inputTokenMint;
     private PublicKey outputTokenMint;
     private int slippageBps;
+    private Collection<String> dexes;
     private Collection<String> excludeDexes;
-    private Collection<String> allowDexes;
     private boolean restrictIntermediateTokens;
     private boolean onlyDirectRoutes;
     private boolean asLegacyTransaction;
@@ -129,8 +129,8 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
       this.inputTokenMint = prototype.inputTokenMint();
       this.outputTokenMint = prototype.outputTokenMint();
       this.slippageBps = prototype.slippageBps();
+      this.dexes = prototype.dexes();
       this.excludeDexes = prototype.excludeDexes();
-      this.allowDexes = prototype.allowDexes();
       this.restrictIntermediateTokens = prototype.restrictIntermediateTokens();
       this.onlyDirectRoutes = prototype.onlyDirectRoutes();
       this.asLegacyTransaction = prototype.asLegacyTransaction();
@@ -143,13 +143,14 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
 
     @Override
     public JupiterQuoteRequest create() {
-      return new JupiterQuoteRequestRecord(swapMode,
+      return new JupiterQuoteRequestRecord(
+          swapMode,
           inputTokenMint,
           amount,
           outputTokenMint,
           slippageBps,
+          dexes,
           excludeDexes,
-          allowDexes,
           restrictIntermediateTokens,
           onlyDirectRoutes,
           asLegacyTransaction,
@@ -192,14 +193,14 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     }
 
     @Override
-    public Builder excludeDexes(final Collection<String> excludeDexes) {
-      this.excludeDexes = excludeDexes;
+    public Builder dexes(final Collection<String> dexes) {
+      this.dexes = dexes;
       return this;
     }
 
     @Override
-    public Builder allowDexes(final Collection<String> allowDexes) {
-      this.allowDexes = allowDexes;
+    public Builder excludeDexes(final Collection<String> excludeDexes) {
+      this.excludeDexes = excludeDexes;
       return this;
     }
 
@@ -259,13 +260,13 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     }
 
     @Override
-    public Collection<String> excludeDexes() {
-      return excludeDexes;
+    public Collection<String> dexes() {
+      return dexes;
     }
 
     @Override
-    public Collection<String> allowDexes() {
-      return allowDexes;
+    public Collection<String> excludeDexes() {
+      return excludeDexes;
     }
 
     @Override

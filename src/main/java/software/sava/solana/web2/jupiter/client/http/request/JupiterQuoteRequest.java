@@ -41,9 +41,9 @@ public interface JupiterQuoteRequest {
 
   int slippageBps();
 
-  Collection<String> excludeDexes();
+  Collection<String> dexes();
 
-  Collection<String> allowDexes();
+  Collection<String> excludeDexes();
 
   boolean restrictIntermediateTokens();
 
@@ -69,13 +69,14 @@ public interface JupiterQuoteRequest {
     if (swapMode() != null) {
       builder.append("&swapMode=").append(swapMode().name());
     }
-    final var excludeDexes = excludeDexes();
-    if (excludeDexes != null && !excludeDexes.isEmpty()) {
-      builder.append("&excludeDexes=").append(URLEncoder.encode(String.join(",", excludeDexes), US_ASCII));
-    }
-    final var allowDexes = allowDexes();
-    if (allowDexes != null && !allowDexes.isEmpty()) {
-      builder.append("&dexes=").append(URLEncoder.encode(String.join(",", allowDexes), US_ASCII));
+    final var dexes = dexes();
+    if (dexes != null && !dexes.isEmpty()) {
+      builder.append("&dexes=").append(URLEncoder.encode(String.join(",", dexes), US_ASCII));
+    } else {
+      final var excludeDexes = excludeDexes();
+      if (excludeDexes != null && !excludeDexes.isEmpty()) {
+        builder.append("&excludeDexes=").append(URLEncoder.encode(String.join(",", excludeDexes), US_ASCII));
+      }
     }
     if (restrictIntermediateTokens()) {
       builder.append("&restrictIntermediateTokens=true");
@@ -128,9 +129,9 @@ public interface JupiterQuoteRequest {
 
     Builder slippageBps(final int slippageBps);
 
-    Builder excludeDexes(final Collection<String> excludeDexes);
+    Builder dexes(final Collection<String> dexes);
 
-    Builder allowDexes(final Collection<String> allowDexes);
+    Builder excludeDexes(final Collection<String> excludeDexes);
 
     Builder restrictIntermediateTokens(boolean restrictIntermediateTokens);
 
@@ -146,14 +147,14 @@ public interface JupiterQuoteRequest {
 
     int autoSlippageCollisionUsdValue();
 
-    JupiterQuoteRequestRecord.BuilderImpl autoSlippageCollisionUsdValue(int autoSlippageCollisionUsdValue);
+    Builder autoSlippageCollisionUsdValue(int autoSlippageCollisionUsdValue);
 
     int maxAutoSlippageBps();
 
-    JupiterQuoteRequestRecord.BuilderImpl maxAutoSlippageBps(int maxAutoSlippageBps);
+    Builder maxAutoSlippageBps(int maxAutoSlippageBps);
 
     boolean autoSlippage();
 
-    JupiterQuoteRequestRecord.BuilderImpl autoSlippage(boolean autoSlippage);
+    Builder autoSlippage(boolean autoSlippage);
   }
 }

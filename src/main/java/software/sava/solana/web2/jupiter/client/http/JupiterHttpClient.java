@@ -74,7 +74,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
         .inputTokenMint(usdc.address())
         .outputTokenMint(sol.address())
         .slippageBps(2)
-        .allowDexes(List.of(
+        .dexes(List.of(
             "1DEX",
             "Cropper",
             "Meteora",
