@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import static software.sava.solana.web2.jupiter.client.http.response.SwapMode.ExactIn;
 import static software.sava.solana.web2.jupiter.client.http.response.SwapMode.ExactOut;
@@ -102,6 +103,8 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
     }
   }
 
+  private static final List<String> NO_DEXES = List.of();
+
   static final class BuilderImpl implements Builder {
 
     private BigInteger amount;
@@ -149,8 +152,8 @@ record JupiterQuoteRequestRecord(SwapMode swapMode,
           amount,
           outputTokenMint,
           slippageBps,
-          dexes,
-          excludeDexes,
+          Objects.requireNonNullElse(dexes, NO_DEXES),
+          Objects.requireNonNullElse(excludeDexes, NO_DEXES),
           restrictIntermediateTokens,
           onlyDirectRoutes,
           asLegacyTransaction,
