@@ -2,49 +2,32 @@
 
 # Solana Web2 [![Build](https://github.com/sava-software/solana-web2/actions/workflows/gradle.yml/badge.svg)](https://github.com/sava-software/solana-web2/actions/workflows/gradle.yml) [![Release](https://github.com/sava-software/solana-web2/actions/workflows/release.yml/badge.svg)](https://github.com/sava-software/solana-web2/actions/workflows/release.yml)
 
-### Disclaimer
+## Documentation
 
-In addition to the MIT License, this project is under active development and breaking changes are to be expected.
+User documentation lives at [sava.software](https://sava.software/).
 
-### Requirements
+* [Dependency Configuration](https://sava.software/quickstart)
+* [Web 2.0](https://sava.software/libraries/web2)
 
-- The latest generally available JDK. This project will continue to move to the latest and will not maintain
-  versions released against previous JDK's.
+## Contribution
 
-### Dependencies
+Unit tests are needed and welcomed. Otherwise, please open a discussion, issue, or send an email before working on a
+pull request.
 
-- [sava-core](https://github.com/sava-software/sava)
-- [sava-rpc](https://github.com/sava-software/sava)
+## Build
 
-### Add Dependency
+[Generate a classic token](https://github.com/settings/tokens) with the `read:packages` scope needed to access
+dependencies hosted on GitHub Package Repository.
 
-Create
-a [GitHub user access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
-with read access to GitHub Packages.
+Create a `gradle.properties` file in the sava project directory root or under `$HOME/.gradle/`.
 
-Then add the following to your Gradle build script.
+### gradle.properties
 
-```groovy
-repositories {
-  maven {
-    url = "https://maven.pkg.github.com/sava-software/sava"
-    credentials {
-      username = GITHUB_USERNAME
-      password = GITHUB_PERSONAL_ACCESS_TOKEN
-    }
-  }
-  maven {
-    url = "https://maven.pkg.github.com/sava-software/solana-web2"
-  }
-}
-
-dependencies {
-  implementation "software.sava:sava-core:$VERSION"
-  implementation "software.sava:sava-rpc:$VERSION"
-  implementation "software.sava:solana-web2:$VERSION"
-}
+```properties
+gpr.user=GITHUB_USERNAME
+gpr.token=GITHUB_TOKEN
 ```
 
-### Contribution
-
-Unit tests are needed and welcomed. Otherwise, please open an issue or send an email before working on a pull request.
+```shell
+./gradlew check
+```

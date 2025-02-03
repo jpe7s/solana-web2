@@ -10,7 +10,6 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
                                  int prioritizationFeeLamports,
                                  int jitoFeeLamports,
                                  boolean asLegacyTransaction,
-                                 boolean restrictIntermediateTokens,
                                  boolean useTokenLedger,
                                  PublicKey destinationTokenAccount,
                                  boolean skipUserAccountsRpcCalls,
@@ -43,9 +42,6 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
     if (asLegacyTransaction) {
       builder.append(",\"asLegacyTransaction\":true");
     }
-    if (restrictIntermediateTokens) {
-      builder.append(",\"restrictIntermediateTokens\":true");
-    }
     if (useTokenLedger) {
       builder.append(",\"useTokenLedger\":true");
     }
@@ -74,7 +70,6 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
     private int prioritizationFeeLamports = Integer.MIN_VALUE;
     private int jitoFeeLamports = Integer.MIN_VALUE;
     private boolean asLegacyTransaction;
-    private boolean restrictIntermediateTokens;
     private boolean useTokenLedger;
     private PublicKey destinationTokenAccount;
     private boolean skipUserAccountsRpcCalls;
@@ -94,7 +89,6 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
           prioritizationFeeLamports,
           jitoFeeLamports,
           asLegacyTransaction,
-          restrictIntermediateTokens,
           useTokenLedger,
           destinationTokenAccount,
           skipUserAccountsRpcCalls,
@@ -167,11 +161,6 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
       return this;
     }
 
-    public Builder restrictIntermediateTokens(final boolean restrictIntermediateTokens) {
-      this.restrictIntermediateTokens = restrictIntermediateTokens;
-      return this;
-    }
-
     public Builder skipUserAccountsRpcCalls(final boolean skipUserAccountsRpcCalls) {
       this.skipUserAccountsRpcCalls = skipUserAccountsRpcCalls;
       return this;
@@ -207,10 +196,6 @@ public record JupiterSwapRequest(PublicKey userPublicKey,
 
     public boolean asLegacyTransaction() {
       return asLegacyTransaction;
-    }
-
-    public boolean restrictIntermediateTokens() {
-      return restrictIntermediateTokens;
     }
 
     public boolean useTokenLedger() {

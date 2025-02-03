@@ -1,8 +1,10 @@
 package software.sava.solana.web2.jupiter.client.http;
 
 import software.sava.core.accounts.PublicKey;
+import software.sava.core.accounts.SolanaAccounts;
 import software.sava.rpc.json.http.client.JsonHttpClient;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterQuoteRequest;
+import software.sava.solana.web2.jupiter.client.http.request.JupiterSwapRequest;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag;
 import software.sava.solana.web2.jupiter.client.http.response.*;
 
@@ -16,10 +18,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -56,27 +55,26 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
 
   public static void main(String[] args) {
-    final var client = JupiterClient.createClient(HttpClient.newHttpClient());
+    final var jupiterClient = JupiterClient.createClient(HttpClient.newHttpClient());
 
-    final var jupToken = client.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
+    final var jupToken = jupiterClient.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
     System.out.println(jupToken);
 
-    final var tokens = client.verifiedTokenMap().join();
-    final var sol = tokens.values().stream()
-        .filter(tokenContext -> tokenContext.symbol().equals("SOL"))
-        .findFirst().orElseThrow();
-    final var usdc = tokens.values().stream()
+    final var userPublicKey = PublicKey.fromBase58Encoded("<KEY>");
+
+    final var tokens = jupiterClient.verifiedTokenMap().join();
+
+    final var outputTokenContext = tokens.get(SolanaAccounts.MAIN_NET.wrappedSolTokenMint());
+    final var inputTokenContext = tokens.values().stream()
         .filter(tokenContext -> tokenContext.symbol().equals("USDC"))
         .findFirst().orElseThrow();
     final var quoteRequest = JupiterQuoteRequest.buildRequest()
         .swapMode(SwapMode.ExactIn)
-        .amount(usdc.fromDecimal(BigDecimal.ONE).toBigInteger())
-        .inputTokenMint(usdc.address())
-        .outputTokenMint(sol.address())
+        .amount(inputTokenContext.fromDecimal(BigDecimal.ONE).toBigInteger())
+        .inputTokenMint(inputTokenContext.address())
+        .outputTokenMint(outputTokenContext.address())
         .slippageBps(2)
-        .dexes(List.of(
-            "1DEX",
-            "Cropper",
+        .dexes(Set.of(
             "Meteora",
             "Meteora DLMM",
             "Orca V2",
@@ -85,17 +83,28 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
             "Raydium",
             "Raydium CLMM",
             "Raydium CP",
-            "Saber",
-            "Saber (Decimals)",
-            "Sanctum",
-            "Sanctum Infinity",
             "Whirlpool"
         ))
-        .onlyDirectRoutes(true)
+        .restrictIntermediateTokens(true)
+        .onlyDirectRoutes(false)
         .create();
 
-    final var quote = client.getQuote(quoteRequest).join();
+    final var quote = jupiterClient.getQuote(quoteRequest).join();
     System.out.println(quote);
+
+    final var swapRequest = JupiterSwapRequest
+        .buildRequest()
+        .userPublicKey(userPublicKey)
+        .skipUserAccountsRpcCalls(true)
+        .useSharedAccounts(true)
+        .createRequest();
+
+//    final var swapTransaction = jupiterClient.swap(
+//        swapRequest.preSerialize(),
+//        quote.quoteResponseJson()
+//    ).join();
+//    final var txBytes = swapTransaction.swapTransaction();
+//    // sign and send transaction
   }
 
   private static final Function<HttpResponse<byte[]>, List<MarketRecord>> MARKET_CACHE_PARSER = applyResponse(MarketRecord::parse);
@@ -203,12 +212,14 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final JupiterQuote jupiterQuote) {
+  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
+                                                    final JupiterQuote jupiterQuote) {
     return swapInstructions(jsonBodyBuilder, jupiterQuote, requestTimeout);
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final byte[] quoteResponseJson) {
+  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
+                                                    final byte[] quoteResponseJson) {
     return swapInstructions(jsonBodyBuilder, quoteResponseJson, requestTimeout);
   }
 
@@ -256,22 +267,30 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final JupiterQuote jupiterQuote, final Duration requestTimeout) {
+  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
+                                                    final JupiterQuote jupiterQuote,
+                                                    final Duration requestTimeout) {
     return swapInstructions(jsonBodyBuilder, jupiterQuote.quoteResponseJson(), requestTimeout);
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder, final byte[] quoteResponseJson, final Duration requestTimeout) {
+  public CompletableFuture<byte[]> swapInstructions(final StringBuilder jsonBodyBuilder,
+                                                    final byte[] quoteResponseJson,
+                                                    final Duration requestTimeout) {
     return swapInstructions(jsonBodyBuilder.append(new String(quoteResponseJson)).append('}').toString(), requestTimeout);
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final JupiterQuote jupiterQuote, final Duration requestTimeout) {
+  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
+                                                    final JupiterQuote jupiterQuote,
+                                                    final Duration requestTimeout) {
     return swapInstructions(jsonBodyPrefix, jupiterQuote.quoteResponseJson(), requestTimeout);
   }
 
   @Override
-  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix, final byte[] quoteResponseJson, final Duration requestTimeout) {
+  public CompletableFuture<byte[]> swapInstructions(final String jsonBodyPrefix,
+                                                    final byte[] quoteResponseJson,
+                                                    final Duration requestTimeout) {
     return swapInstructions(jsonBodyPrefix + new String(quoteResponseJson) + '}', requestTimeout);
   }
 
