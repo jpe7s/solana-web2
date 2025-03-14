@@ -52,8 +52,12 @@ public record TokenContext(PublicKey address,
       return community;
     } else if (fieldEquals("token-2022", buf, offset, len) || fieldEquals("token_2022", buf, offset, len)) {
       return token_2022;
+    } else if (fieldEquals("launchpad", buf, offset, len)) {
+      return launchpad;
     } else if (fieldEquals("lst", buf, offset, len)) {
       return lst;
+    } else if (fieldEquals("lst-new", buf, offset, len)) {
+      return lst_new;
     } else if (fieldEquals("unknown", buf, offset, len)) {
       return unknown;
     } else if (fieldEquals("birdeye-trending", buf, offset, len) || fieldEquals("birdeye_trending", buf, offset, len)) {
@@ -73,7 +77,8 @@ public record TokenContext(PublicKey address,
     } else {
       log.log(WARNING,
           "Failed to parse unknown Jupiter token tag [{0}].",
-          new String(buf, offset, len));
+          new String(buf, offset, len)
+      );
       return null;
     }
   };
@@ -115,7 +120,8 @@ public record TokenContext(PublicKey address,
           extensions.put(TokenExtension.valueOf(extension), value);
         } catch (final RuntimeException ex) {
           log.log(WARNING,
-              "Failed to parse unknown Jupiter token extension [{0}={1}].", extension, value);
+              "Failed to parse unknown Jupiter token extension [{0}={1}].", extension, value
+          );
         }
       }
       builder.extensions = extensions;
@@ -132,7 +138,8 @@ public record TokenContext(PublicKey address,
     } else {
       ji.skip();
       log.log(WARNING,
-          "Failed to parse unknown Jupiter token context field [{0}].", new String(buf, offset, len));
+          "Failed to parse unknown Jupiter token context field [{0}].", new String(buf, offset, len)
+      );
     }
     return true;
   };

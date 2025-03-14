@@ -2,16 +2,18 @@ package software.sava.solana.web2.jupiter.client.http.request;
 
 public enum JupiterTokenTag {
 
-  verified,
-  unknown,
+  birdeye_trending,
+  clone,
   community,
   deduplicated,
   deprecated,
-  strict,
+  launchpad,
   lst,
+  lst_new,
   moonshot,
+  pump,
+  strict,
   token_2022,
-  birdeye_trending,
-  clone,
-  pump
+  unknown,
+  verified
 }

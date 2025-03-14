@@ -60,7 +60,6 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     final var jupToken = jupiterClient.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
     System.out.println(jupToken);
 
-    final var userPublicKey = PublicKey.fromBase58Encoded("<KEY>");
 
     final var tokens = jupiterClient.verifiedTokenMap().join();
 
@@ -94,17 +93,18 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
     final var swapRequest = JupiterSwapRequest
         .buildRequest()
-        .userPublicKey(userPublicKey)
+        // .userPublicKey(signer.publicKey())
         .skipUserAccountsRpcCalls(true)
         .useSharedAccounts(true)
         .createRequest();
 
-//    final var swapTransaction = jupiterClient.swap(
-//        swapRequest.preSerialize(),
-//        quote.quoteResponseJson()
-//    ).join();
-//    final var txBytes = swapTransaction.swapTransaction();
-//    // sign and send transaction
+    final var swapTransaction = jupiterClient.swap(
+        swapRequest.preSerialize(),
+        quote.quoteResponseJson()
+    ).join();
+    final var txBytes = swapTransaction.swapTransaction();
+//    Transaction.sign(signer, txBytes);
+    // send transaction
   }
 
   private static final Function<HttpResponse<byte[]>, List<MarketRecord>> MARKET_CACHE_PARSER = applyResponse(MarketRecord::parse);
