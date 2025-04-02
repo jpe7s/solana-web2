@@ -26,33 +26,33 @@ import static software.sava.solana.web2.jupiter.client.http.JupiterHttpClient.DE
 
 public interface JupiterClient {
 
-  String PUBLIC_QUOTE_ENDPOINT = "https://quote-api.jup.ag";
-  String PUBLIC_TOKEN_LIST_ENDPOINT = "https://tokens.jup.ag";
+  String PUBLIC_QUOTE_ENDPOINT = "https://lite-api.jup.ag";
+  String PUBLIC_TOKEN_LIST_ENDPOINT = "https://lite-api.jup.ag";
 
-  static JupiterClient createClient(final URI quoteEndpoint,
+  static JupiterClient createClient(final URI quoteSwapEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
                                     final Duration requestTimeout,
                                     final UnaryOperator<HttpRequest.Builder> extendRequest,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
+    return new JupiterHttpClient(quoteSwapEndpoint, tokensEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
   }
 
-  static JupiterClient createClient(final URI quoteEndpoint,
+  static JupiterClient createClient(final URI quoteSwapEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
                                     final Duration requestTimeout,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return new JupiterHttpClient(quoteEndpoint, tokensEndpoint, httpClient, requestTimeout, null, applyResponse);
+    return new JupiterHttpClient(quoteSwapEndpoint, tokensEndpoint, httpClient, requestTimeout, null, applyResponse);
   }
 
-  static JupiterClient createClient(final URI quoteEndpoint,
+  static JupiterClient createClient(final URI quoteSwapEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
                                     final UnaryOperator<HttpRequest.Builder> extendRequest,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
     return createClient(
-        quoteEndpoint,
+        quoteSwapEndpoint,
         tokensEndpoint,
         httpClient,
         DEFAULT_REQUEST_TIMEOUT,
@@ -61,12 +61,12 @@ public interface JupiterClient {
     );
   }
 
-  static JupiterClient createClient(final URI quoteEndpoint,
+  static JupiterClient createClient(final URI quoteSwapEndpoint,
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
     return createClient(
-        quoteEndpoint,
+        quoteSwapEndpoint,
         tokensEndpoint,
         httpClient,
         DEFAULT_REQUEST_TIMEOUT,
@@ -139,6 +139,8 @@ public interface JupiterClient {
 
   CompletableFuture<Map<PublicKey, TokenContext>> allTokens();
 
+  CompletableFuture<List<PublicKey>> tradableMints();
+
   CompletableFuture<Map<PublicKey, TokenContext>> tokenMap(final JupiterTokenTag tag);
 
   CompletableFuture<Map<PublicKey, TokenContext>> tokenMap(final Collection<JupiterTokenTag> tags);
@@ -146,9 +148,6 @@ public interface JupiterClient {
   default CompletableFuture<Map<PublicKey, TokenContext>> verifiedTokenMap() {
     return tokenMap(JupiterTokenTag.verified);
   }
-
-  @Deprecated
-  CompletableFuture<Map<PublicKey, TokenContext>> tokensWithLiquidMarkets();
 
   default CompletableFuture<Map<PublicKey, TokenContext>> liquidStakingTokens() {
     return tokenMap(JupiterTokenTag.lst);

@@ -27,7 +27,8 @@ public record MarketRecord(PublicKey pubkey,
                            String serumCoinVaultAccount,
                            String serumEventQueue,
                            String serumPcVaultAccount,
-                           String serumVaultSigner) {
+                           String serumVaultSigner,
+                           long routingGroup) {
 
   public static List<MarketRecord> parse(final JsonIterator ji) {
     final var records = new ArrayList<MarketRecord>(2_048);
@@ -46,16 +47,20 @@ public record MarketRecord(PublicKey pubkey,
         System.out.format("%nUnhandled MarketRecord.params field %s: %s%n", field, ji.currentBuffer());
       }
       case STRING -> System.out.format("""
-          "%s":"%s"%n""", field, ji.readString());
+          "%s":"%s"%n""", field, ji.readString()
+      );
       case NUMBER -> System.out.format("""
-          "%s":%d%n""", field, ji.readLong());
+          "%s":%d%n""", field, ji.readLong()
+      );
       case NULL -> {
         System.out.format("""
-            "%s":null%n""", field);
+            "%s":null%n""", field
+        );
         ji.skip();
       }
       case BOOLEAN -> System.out.format("""
-          "%s":%b%n""", field, ji.readBoolean());
+          "%s":%b%n""", field, ji.readBoolean()
+      );
       case ARRAY -> {
         System.out.println("[");
         while (ji.readArray()) {
@@ -92,6 +97,8 @@ public record MarketRecord(PublicKey pubkey,
       builder.serumPcVaultAccount = ji.readString();
     } else if (fieldEquals("serumVaultSigner", buf, offset, len)) {
       builder.serumVaultSigner = ji.readString();
+    } else if (fieldEquals("routingGroup", buf, offset, len)) {
+      builder.routingGroup = ji.readLong();
     } else {
       final var field = new String(buf, offset, len);
       printValue(ji, field);
@@ -141,6 +148,7 @@ public record MarketRecord(PublicKey pubkey,
     private String serumEventQueue;
     private String serumPcVaultAccount;
     private String serumVaultSigner;
+    private long routingGroup;
 
     private Builder() {
     }
@@ -162,7 +170,8 @@ public record MarketRecord(PublicKey pubkey,
           serumCoinVaultAccount,
           serumEventQueue,
           serumPcVaultAccount,
-          serumVaultSigner
+          serumVaultSigner,
+          routingGroup
       );
     }
   }

@@ -1,6 +1,6 @@
 package software.sava.solana.web2.jupiter.client.http.response;
 
-import systems.comodal.jsoniter.ContextFieldBufferPredicate;
+import systems.comodal.jsoniter.FieldBufferPredicate;
 import systems.comodal.jsoniter.JsonIterator;
 
 import java.util.Base64;
@@ -12,21 +12,12 @@ public record JupiterSwapTx(byte[] swapTransaction,
                             String base64Encoded) {
 
   public static JupiterSwapTx parse(final JsonIterator ji) {
-    return ji.testObject(new Builder(), PARSER).create();
+    final var parser = new Builder();
+    ji.testObject(parser);
+    return parser.create();
   }
 
-  private static final ContextFieldBufferPredicate<Builder> PARSER = (builder, buf, offset, len, ji) -> {
-    if (fieldEquals("swapTransaction", buf, offset, len)) {
-      builder.swapTransaction = ji.readString();
-    } else if (fieldEquals("lastValidBlockHeight", buf, offset, len)) {
-      builder.lastValidBlockHeight = ji.readLong();
-    } else {
-      ji.skip();
-    }
-    return true;
-  };
-
-  private static final class Builder {
+  private static final class Builder implements FieldBufferPredicate {
 
     private long lastValidBlockHeight;
     private String swapTransaction;
@@ -35,7 +26,23 @@ public record JupiterSwapTx(byte[] swapTransaction,
     }
 
     private JupiterSwapTx create() {
-      return new JupiterSwapTx(Base64.getDecoder().decode(swapTransaction), lastValidBlockHeight, swapTransaction);
+      return new JupiterSwapTx(
+          Base64.getDecoder().decode(swapTransaction),
+          lastValidBlockHeight,
+          swapTransaction
+      );
+    }
+
+    @Override
+    public boolean test(final char[] buf, final int offset, final int len, final JsonIterator ji) {
+      if (fieldEquals("swapTransaction", buf, offset, len)) {
+        swapTransaction = ji.readString();
+      } else if (fieldEquals("lastValidBlockHeight", buf, offset, len)) {
+        lastValidBlockHeight = ji.readLong();
+      } else {
+        ji.skip();
+      }
+      return true;
     }
   }
 }

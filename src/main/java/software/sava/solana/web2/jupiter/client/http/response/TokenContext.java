@@ -74,6 +74,8 @@ public record TokenContext(PublicKey address,
       return deduplicated;
     } else if (fieldEquals("deprecated", buf, offset, len)) {
       return deprecated;
+    } else if (fieldEquals("internal", buf, offset, len)) {
+      return internal;
     } else {
       log.log(WARNING,
           "Failed to parse unknown Jupiter token tag [{0}].",

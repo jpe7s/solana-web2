@@ -7,6 +7,7 @@ public enum JupiterTokenTag {
   community,
   deduplicated,
   deprecated,
+  internal,
   launchpad,
   lst,
   lst_new,

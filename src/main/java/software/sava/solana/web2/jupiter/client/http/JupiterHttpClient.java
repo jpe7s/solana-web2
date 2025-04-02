@@ -2,6 +2,7 @@ package software.sava.solana.web2.jupiter.client.http;
 
 import software.sava.core.accounts.PublicKey;
 import software.sava.core.accounts.SolanaAccounts;
+import software.sava.rpc.json.PublicKeyEncoding;
 import software.sava.rpc.json.http.client.JsonHttpClient;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterQuoteRequest;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterSwapRequest;
@@ -34,6 +35,13 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(13);
 
   private static final Function<HttpResponse<byte[]>, TokenContext> TOKEN = applyResponse(TokenContext::parseToken);
+  private static final Function<HttpResponse<byte[]>, List<PublicKey>> MINTS = applyResponse(ji -> {
+    final var mints = new ArrayList<PublicKey>(1_048_576);
+    while (ji.readArray()) {
+      mints.add(PublicKeyEncoding.parseBase58Encoded(ji));
+    }
+    return mints;
+  });
   private static final Function<HttpResponse<byte[]>, Map<PublicKey, TokenContext>> TOKEN_LIST = applyResponse(TokenContext::parseList);
   private static final Function<HttpResponse<byte[]>, JupiterQuote> QUOTE_PARSER = applyResponse(JupiterQuote::parse);
   private static final Function<HttpResponse<byte[]>, JupiterSwapTx> SWAP_TX = applyResponse(JupiterSwapTx::parse);
@@ -52,67 +60,12 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     }
     return programLabels;
   });
-
-
-  public static void main(String[] args) {
-    final var jupiterClient = JupiterClient.createClient(HttpClient.newHttpClient());
-
-    final var jupToken = jupiterClient.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
-    System.out.println(jupToken);
-
-
-    final var tokens = jupiterClient.verifiedTokenMap().join();
-
-    final var outputTokenContext = tokens.get(SolanaAccounts.MAIN_NET.wrappedSolTokenMint());
-    final var inputTokenContext = tokens.values().stream()
-        .filter(tokenContext -> tokenContext.symbol().equals("USDC"))
-        .findFirst().orElseThrow();
-    final var quoteRequest = JupiterQuoteRequest.buildRequest()
-        .swapMode(SwapMode.ExactIn)
-        .amount(inputTokenContext.fromDecimal(BigDecimal.ONE).toBigInteger())
-        .inputTokenMint(inputTokenContext.address())
-        .outputTokenMint(outputTokenContext.address())
-        .slippageBps(2)
-        .dexes(Set.of(
-            "Meteora",
-            "Meteora DLMM",
-            "Orca V2",
-            "OpenBook V2",
-            "Phoenix",
-            "Raydium",
-            "Raydium CLMM",
-            "Raydium CP",
-            "Whirlpool"
-        ))
-        .restrictIntermediateTokens(true)
-        .onlyDirectRoutes(false)
-        .create();
-
-    final var quote = jupiterClient.getQuote(quoteRequest).join();
-    System.out.println(quote);
-
-    final var swapRequest = JupiterSwapRequest
-        .buildRequest()
-        // .userPublicKey(signer.publicKey())
-        .skipUserAccountsRpcCalls(true)
-        .useSharedAccounts(true)
-        .createRequest();
-
-    final var swapTransaction = jupiterClient.swap(
-        swapRequest.preSerialize(),
-        quote.quoteResponseJson()
-    ).join();
-    final var txBytes = swapTransaction.swapTransaction();
-//    Transaction.sign(signer, txBytes);
-    // send transaction
-  }
-
   private static final Function<HttpResponse<byte[]>, List<MarketRecord>> MARKET_CACHE_PARSER = applyResponse(MarketRecord::parse);
 
-  private final URI tokensEndpoint;
   private final URI tokenPath;
-  private final URI tokensPath;
-  private final URI tokensWithMarketsPath;
+  private final URI allTokensPath;
+  private final URI taggedTokensPath;
+  private final URI tradableMintsPath;
   private final String quotePathFormat;
   private final String quotePath;
   private final URI swapURI;
@@ -126,10 +79,10 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
                     final UnaryOperator<HttpRequest.Builder> extendRequest,
                     final Predicate<HttpResponse<byte[]>> applyResponse) {
     super(quoteEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
-    this.tokensEndpoint = tokensEndpoint;
-    this.tokenPath = tokensEndpoint.resolve("/token/");
-    this.tokensPath = tokensEndpoint.resolve("/tokens/");
-    this.tokensWithMarketsPath = tokensEndpoint.resolve("/tokens_with_markets");
+    this.tokenPath = tokensEndpoint.resolve("/tokens/v1/token/");
+    this.allTokensPath = tokensEndpoint.resolve("/tokens/v1/all");
+    this.taggedTokensPath = tokensEndpoint.resolve("/tokens/v1/tagged/");
+    this.tradableMintsPath = tokensEndpoint.resolve("/tokens/v1/mints/tradable");
     try {
       final var inetAddress = InetAddress.getByName(quoteEndpoint.getHost());
       if (inetAddress.isLoopbackAddress() || inetAddress.isAnyLocalAddress()) {
@@ -139,11 +92,11 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
         this.swapInstructionsURI = quoteEndpoint.resolve("/swap-instructions");
         this.programLabelsRequest = newRequest(quoteEndpoint.resolve("/program-id-to-label")).build();
       } else {
-        this.quotePathFormat = "/v6/quote?amount=%s&%s";
-        this.quotePath = "/v6/quote?";
-        this.swapURI = quoteEndpoint.resolve("/v6/swap");
-        this.swapInstructionsURI = quoteEndpoint.resolve("/v6/swap-instructions");
-        this.programLabelsRequest = newRequest(quoteEndpoint.resolve("/v6/program-id-to-label")).build();
+        this.quotePathFormat = "/swap/v1/quote?amount=%s&%s";
+        this.quotePath = "/swap/v1/quote?";
+        this.swapURI = quoteEndpoint.resolve("/swap/v1/swap");
+        this.swapInstructionsURI = quoteEndpoint.resolve("/swap/v1/swap-instructions");
+        this.programLabelsRequest = newRequest(quoteEndpoint.resolve("/swap/v1/program-id-to-label")).build();
       }
     } catch (final UnknownHostException e) {
       throw new UncheckedIOException(e);
@@ -158,7 +111,12 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   @Override
   public CompletableFuture<Map<PublicKey, TokenContext>> allTokens() {
-    return sendGetRequest(tokensPath, TOKEN_LIST);
+    return sendGetRequest(allTokensPath, TOKEN_LIST);
+  }
+
+  @Override
+  public CompletableFuture<List<PublicKey>> tradableMints() {
+    return sendGetRequest(tradableMintsPath, MINTS);
   }
 
   @Override
@@ -166,7 +124,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     if (tag == null) {
       return verifiedTokenMap();
     }
-    final var url = tokensEndpoint.resolve("/tokens?tags=" + tag.name());
+    final var url = taggedTokensPath.resolve(tag.name().replace('_', '-'));
     return sendGetRequest(url, TOKEN_LIST);
   }
 
@@ -175,15 +133,11 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     if (tags == null || tags.isEmpty()) {
       return verifiedTokenMap();
     }
-    final var url = tokensEndpoint.resolve("/tokens?tags=" + tags.stream()
+    final var url = taggedTokensPath.resolve(tags.stream()
         .map(JupiterTokenTag::name)
-        .collect(Collectors.joining(",")));
+        .map(tag -> tag.replace('_', '-'))
+        .collect(Collectors.joining(",", "tag_list=", "")));
     return sendGetRequest(url, TOKEN_LIST);
-  }
-
-  @Override
-  public CompletableFuture<Map<PublicKey, TokenContext>> tokensWithLiquidMarkets() {
-    return sendGetRequest(tokensWithMarketsPath, TOKEN_LIST);
   }
 
   @Override
@@ -261,8 +215,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     return swap(jsonBodyPrefix + new String(quoteResponseJson) + '}', requestTimeout);
   }
 
-  private CompletableFuture<JupiterSwapTx> swap(final String jsonBody,
-                                                final Duration requestTimeout) {
+  private CompletableFuture<JupiterSwapTx> swap(final String jsonBody, final Duration requestTimeout) {
     return sendPostRequest(swapURI, SWAP_TX, requestTimeout, jsonBody);
   }
 
@@ -330,5 +283,63 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
         .header("Content-Type", "application/json")
         .build();
     return httpClient.sendAsync(request, ofByteArray()).thenApply(MARKET_CACHE_PARSER);
+  }
+
+  public static void main(String[] args) {
+    final var jupiterClient = JupiterClient.createClient(HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build());
+
+    // final var marketCache = jupiterClient.getMarketCache().join();
+
+    final var allToken = jupiterClient.tokenMap(List.of(JupiterTokenTag.verified, JupiterTokenTag.token_2022)).join();
+    System.out.println(allToken.size());
+
+    System.out.println(Integer.highestOneBit(allToken.size()) << 1);
+    final var jupToken = jupiterClient.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
+    System.out.println(jupToken);
+
+    final var tokens = jupiterClient.verifiedTokenMap().join();
+
+    final var outputTokenContext = tokens.get(SolanaAccounts.MAIN_NET.wrappedSolTokenMint());
+    final var inputTokenContext = tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("USDC"))
+        .findFirst().orElseThrow();
+    final var quoteRequest = JupiterQuoteRequest.buildRequest()
+        .swapMode(SwapMode.ExactIn)
+        .amount(inputTokenContext.fromDecimal(BigDecimal.ONE).toBigInteger())
+        .inputTokenMint(inputTokenContext.address())
+        .outputTokenMint(outputTokenContext.address())
+        .slippageBps(2)
+        .dexes(Set.of(
+            "Meteora",
+            "Meteora DLMM",
+            "Orca V2",
+            "OpenBook V2",
+            "Phoenix",
+            "Raydium",
+            "Raydium CLMM",
+            "Raydium CP",
+            "Whirlpool"
+        ))
+        .restrictIntermediateTokens(true)
+        .onlyDirectRoutes(false)
+        .create();
+
+    final var quote = jupiterClient.getQuote(quoteRequest).join();
+    System.out.println(quote);
+
+    final var swapRequest = JupiterSwapRequest
+        .buildRequest()
+        .userPublicKey(PublicKey.NONE)
+        .skipUserAccountsRpcCalls(true)
+        .useSharedAccounts(true)
+        .createRequest();
+
+    final var swapTransaction = jupiterClient.swap(
+        swapRequest.preSerialize(),
+        quote.quoteResponseJson()
+    ).join();
+    final var txBytes = swapTransaction.swapTransaction();
+//    Transaction.sign(signer, txBytes);
+    // send transaction
   }
 }
