@@ -286,18 +286,19 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   }
 
   public static void main(String[] args) {
-    final var jupiterClient = JupiterClient.createClient(HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build());
+    final var jupiterClient = JupiterClient.createClient(HttpClient.newBuilder().build());
 
     // final var marketCache = jupiterClient.getMarketCache().join();
+    final var dex = jupiterClient.getDexLabelToProgramIdMap().join();
+    System.out.println(dex);
 
     final var allToken = jupiterClient.tokenMap(List.of(JupiterTokenTag.verified, JupiterTokenTag.token_2022)).join();
     System.out.println(allToken.size());
 
-    System.out.println(Integer.highestOneBit(allToken.size()) << 1);
+    final var tokens = jupiterClient.verifiedTokenMap().join();
+
     final var jupToken = jupiterClient.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
     System.out.println(jupToken);
-
-    final var tokens = jupiterClient.verifiedTokenMap().join();
 
     final var outputTokenContext = tokens.get(SolanaAccounts.MAIN_NET.wrappedSolTokenMint());
     final var inputTokenContext = tokens.values().stream()
