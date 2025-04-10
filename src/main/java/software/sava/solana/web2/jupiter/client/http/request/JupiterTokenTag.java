@@ -5,6 +5,7 @@ public enum JupiterTokenTag {
   birdeye_trending,
   clone,
   community,
+  community_assist,
   deduplicated,
   deprecated,
   internal,

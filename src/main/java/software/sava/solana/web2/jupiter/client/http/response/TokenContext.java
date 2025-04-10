@@ -76,6 +76,8 @@ public record TokenContext(PublicKey address,
       return deprecated;
     } else if (fieldEquals("internal", buf, offset, len)) {
       return internal;
+    } else if (fieldEquals("community-assist", buf, offset, len)) {
+      return community_assist;
     } else {
       log.log(WARNING,
           "Failed to parse unknown Jupiter token tag [{0}].",
