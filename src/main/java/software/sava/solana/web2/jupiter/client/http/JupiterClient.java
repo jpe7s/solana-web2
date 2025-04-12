@@ -3,10 +3,7 @@ package software.sava.solana.web2.jupiter.client.http;
 import software.sava.core.accounts.PublicKey;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterQuoteRequest;
 import software.sava.solana.web2.jupiter.client.http.request.JupiterTokenTag;
-import software.sava.solana.web2.jupiter.client.http.response.JupiterQuote;
-import software.sava.solana.web2.jupiter.client.http.response.JupiterSwapTx;
-import software.sava.solana.web2.jupiter.client.http.response.MarketRecord;
-import software.sava.solana.web2.jupiter.client.http.response.TokenContext;
+import software.sava.solana.web2.jupiter.client.http.response.*;
 
 import java.math.BigInteger;
 import java.net.URI;
@@ -14,20 +11,38 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
+import static software.sava.solana.web2.jupiter.client.http.JupiterHttpClient.DATE_TIME_FORMATTER;
 import static software.sava.solana.web2.jupiter.client.http.JupiterHttpClient.DEFAULT_REQUEST_TIMEOUT;
 
 public interface JupiterClient {
 
   String PUBLIC_QUOTE_ENDPOINT = "https://lite-api.jup.ag";
   String PUBLIC_TOKEN_LIST_ENDPOINT = "https://lite-api.jup.ag";
+  String WORKER_ENDPOINT = "https://worker.jup.ag";
+
+  static JupiterClient createClient(final URI quoteSwapEndpoint,
+                                    final URI tokensEndpoint,
+                                    final URI workerEndpoint,
+                                    final HttpClient httpClient,
+                                    final Duration requestTimeout,
+                                    final UnaryOperator<HttpRequest.Builder> extendRequest,
+                                    final Predicate<HttpResponse<byte[]>> applyResponse) {
+    return new JupiterHttpClient(
+        quoteSwapEndpoint,
+        tokensEndpoint,
+        workerEndpoint,
+        httpClient,
+        requestTimeout,
+        extendRequest,
+        applyResponse
+    );
+  }
 
   static JupiterClient createClient(final URI quoteSwapEndpoint,
                                     final URI tokensEndpoint,
@@ -35,7 +50,15 @@ public interface JupiterClient {
                                     final Duration requestTimeout,
                                     final UnaryOperator<HttpRequest.Builder> extendRequest,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return new JupiterHttpClient(quoteSwapEndpoint, tokensEndpoint, httpClient, requestTimeout, extendRequest, applyResponse);
+    return new JupiterHttpClient(
+        quoteSwapEndpoint,
+        tokensEndpoint,
+        URI.create(WORKER_ENDPOINT),
+        httpClient,
+        requestTimeout,
+        extendRequest,
+        applyResponse
+    );
   }
 
   static JupiterClient createClient(final URI quoteSwapEndpoint,
@@ -43,7 +66,14 @@ public interface JupiterClient {
                                     final HttpClient httpClient,
                                     final Duration requestTimeout,
                                     final Predicate<HttpResponse<byte[]>> applyResponse) {
-    return new JupiterHttpClient(quoteSwapEndpoint, tokensEndpoint, httpClient, requestTimeout, null, applyResponse);
+    return createClient(
+        quoteSwapEndpoint,
+        tokensEndpoint,
+        httpClient,
+        requestTimeout,
+        null,
+        applyResponse
+    );
   }
 
   static JupiterClient createClient(final URI quoteSwapEndpoint,
@@ -91,12 +121,13 @@ public interface JupiterClient {
                                     final URI tokensEndpoint,
                                     final HttpClient httpClient,
                                     final Duration requestTimeout) {
-    return new JupiterHttpClient(
+    return createClient(
         quoteEndpoint,
         tokensEndpoint,
         httpClient,
         requestTimeout,
-        null, null
+        null,
+        null
     );
   }
 
@@ -224,4 +255,14 @@ public interface JupiterClient {
                                              final Duration requestTimeout);
 
   CompletableFuture<List<MarketRecord>> getMarketCache();
+
+  CompletableFuture<ClaimAsrProof> claimAsrProof(final PublicKey account,
+                                                 final String asrTimeline,
+                                                 final SequencedCollection<PublicKey> mints);
+
+  default CompletableFuture<ClaimAsrProof> claimAsrProof(final PublicKey account,
+                                                         final LocalDate asrTimeline,
+                                                         final SequencedCollection<PublicKey> mints) {
+    return claimAsrProof(account, DATE_TIME_FORMATTER.format(asrTimeline).toLowerCase(Locale.ENGLISH), mints);
+  }
 }

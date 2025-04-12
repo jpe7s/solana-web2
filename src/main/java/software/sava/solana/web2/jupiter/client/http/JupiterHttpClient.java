@@ -19,6 +19,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -33,6 +36,7 @@ import static software.sava.rpc.json.http.client.JsonResponseController.checkRes
 final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(13);
+  static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM-yyyy", Locale.ENGLISH);
 
   private static final Function<HttpResponse<byte[]>, TokenContext> TOKEN = applyResponse(TokenContext::parseToken);
   private static final Function<HttpResponse<byte[]>, List<PublicKey>> MINTS = applyResponse(ji -> {
@@ -61,6 +65,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     return programLabels;
   });
   private static final Function<HttpResponse<byte[]>, List<MarketRecord>> MARKET_CACHE_PARSER = applyResponse(MarketRecord::parse);
+  private static final Function<HttpResponse<byte[]>, ClaimAsrProof> ASR_PROOF = applyResponse(ClaimAsrProof::parseProof);
 
   private final URI tokenPath;
   private final URI allTokensPath;
@@ -70,10 +75,12 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   private final String quotePath;
   private final URI swapURI;
   private final URI swapInstructionsURI;
+  private final URI workerURI;
   private final HttpRequest programLabelsRequest;
 
   JupiterHttpClient(final URI quoteEndpoint,
                     final URI tokensEndpoint,
+                    final URI workerURI,
                     final HttpClient httpClient,
                     final Duration requestTimeout,
                     final UnaryOperator<HttpRequest.Builder> extendRequest,
@@ -83,6 +90,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     this.allTokensPath = tokensEndpoint.resolve("/tokens/v1/all");
     this.taggedTokensPath = tokensEndpoint.resolve("/tokens/v1/tagged/");
     this.tradableMintsPath = tokensEndpoint.resolve("/tokens/v1/mints/tradable");
+    this.workerURI = workerURI;
     try {
       final var inetAddress = InetAddress.getByName(quoteEndpoint.getHost());
       if (inetAddress.isLoopbackAddress() || inetAddress.isAnyLocalAddress()) {
@@ -285,8 +293,26 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     return httpClient.sendAsync(request, ofByteArray()).thenApply(MARKET_CACHE_PARSER);
   }
 
+  @Override
+  public CompletableFuture<ClaimAsrProof> claimAsrProof(final PublicKey vault,
+                                                        final String account,
+                                                        final SequencedCollection<PublicKey> mints) {
+    final var body = mints.stream().map(PublicKey::toBase58).collect(Collectors.joining(
+        ",", String.format("/asr-claim-proof/%s?asrTimeline=%s&mints=", vault, account), ""
+    ));
+    final var request = newRequest(workerURI.resolve(body)).build();
+    return httpClient.sendAsync(request, ofByteArray()).thenApply(ASR_PROOF);
+  }
+
   public static void main(String[] args) {
     final var jupiterClient = JupiterClient.createClient(HttpClient.newBuilder().build());
+
+    final var response = jupiterClient.claimAsrProof(
+        PublicKey.fromBase58Encoded(""),
+        LocalDate.of(2025, Month.APRIL, 1),
+        List.of(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"))
+    ).join();
+    System.out.println(response);
 
     // final var marketCache = jupiterClient.getMarketCache().join();
     final var dex = jupiterClient.getDexLabelToProgramIdMap().join();
