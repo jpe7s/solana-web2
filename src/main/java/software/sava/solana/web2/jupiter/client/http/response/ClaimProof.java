@@ -5,7 +5,6 @@ import systems.comodal.jsoniter.FieldBufferPredicate;
 import systems.comodal.jsoniter.JsonIterator;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
@@ -13,7 +12,7 @@ public record ClaimProof(PublicKey mint,
                          PublicKey merkleTree,
                          long amount,
                          long lockedAmount,
-                         List<byte[]> proof) {
+                         byte[][] proof) {
 
   public static ClaimProof parseProof(final JsonIterator ji) {
     final var builder = new Parser();
@@ -27,7 +26,7 @@ public record ClaimProof(PublicKey mint,
     private PublicKey merkleTree;
     private long amount;
     private long lockedAmount;
-    private List<byte[]> proof;
+    private byte[][] proof;
 
     private Parser() {
     }
@@ -55,7 +54,7 @@ public record ClaimProof(PublicKey mint,
           }
           proof.add(item);
         }
-        this.proof = proof;
+        this.proof = proof.toArray(byte[][]::new);
       } else {
         ji.skip();
       }
