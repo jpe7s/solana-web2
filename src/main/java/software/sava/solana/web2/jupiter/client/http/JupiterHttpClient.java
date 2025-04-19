@@ -307,12 +307,12 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
   public static void main(String[] args) {
     final var jupiterClient = JupiterClient.createClient(HttpClient.newBuilder().build());
 
-    final var response = jupiterClient.claimAsrProof(
-        PublicKey.fromBase58Encoded(""),
-        LocalDate.of(2025, Month.APRIL, 1),
-        List.of(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"))
-    ).join();
-    System.out.println(response);
+//    final var response = jupiterClient.claimAsrProof(
+//        PublicKey.fromBase58Encoded(""),
+//        LocalDate.of(2025, Month.APRIL, 1),
+//        List.of(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"))
+//    ).join();
+//    System.out.println(response);
 
     // final var marketCache = jupiterClient.getMarketCache().join();
     final var dex = jupiterClient.getDexLabelToProgramIdMap().join();
