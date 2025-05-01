@@ -254,6 +254,12 @@ public interface JupiterClient {
                                              final byte[] quoteResponseJson,
                                              final Duration requestTimeout);
 
+  CompletableFuture<JupiterUltraOrder> ultraOrder(final BigInteger amount,
+                                                  final String query,
+                                                  final Duration requestTimeout);
+
+  CompletableFuture<JupiterExecuteOrder> executeOrder(final String base64SignedTx, final String requestId);
+
   CompletableFuture<List<MarketRecord>> getMarketCache();
 
   CompletableFuture<ClaimAsrProof> claimAsrProof(final PublicKey account,
