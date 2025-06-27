@@ -1,7 +1,6 @@
 package software.sava.solana.web2.birdeye.client.http.response;
 
 import software.sava.core.accounts.PublicKey;
-import software.sava.rpc.json.PublicKeyEncoding;
 import systems.comodal.jsoniter.ContextFieldBufferPredicate;
 import systems.comodal.jsoniter.JsonIterator;
 

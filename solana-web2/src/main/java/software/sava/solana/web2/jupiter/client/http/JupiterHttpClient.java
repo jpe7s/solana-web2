@@ -341,7 +341,7 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
 
   public static void main(String[] args) {
     final var jupiterClient = JupiterClient.createClient(HttpClient.newHttpClient(), null, httpResponse -> {
-          System.out.println(new String(httpResponse.body()));
+//          System.out.println(new String(httpResponse.body()));
 //          try {
 //            Files.writeString(Path.of("market_cache.json"), new String(httpResponse.body()));
 //          } catch (IOException e) {
@@ -389,6 +389,21 @@ final class JupiterHttpClient extends JsonHttpClient implements JupiterClient {
     System.out.println(allToken.size());
 
     final var tokens = jupiterClient.verifiedTokenMap().join();
+    tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("USDC"))
+        .findFirst().ifPresent(System.out::println);
+    tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("USDT"))
+        .findFirst().ifPresent(System.out::println);
+    tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("USDG"))
+        .findFirst().ifPresent(System.out::println);
+    tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("PYUSD"))
+        .findFirst().ifPresent(System.out::println);
+    tokens.values().stream()
+        .filter(tokenContext -> tokenContext.symbol().equals("USDS"))
+        .findFirst().ifPresent(System.out::println);
 
     final var jupToken = jupiterClient.token(PublicKey.fromBase58Encoded("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")).join();
     System.out.println(jupToken);

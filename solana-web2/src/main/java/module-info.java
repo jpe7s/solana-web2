@@ -1,10 +1,10 @@
 module software.sava.solana_web2 {
   requires java.net.http;
 
-  requires systems.comodal.json_iterator;
+  requires transitive systems.comodal.json_iterator;
 
-  requires software.sava.core;
-  requires software.sava.rpc;
+  requires transitive software.sava.core;
+  requires transitive software.sava.rpc;
 
   exports software.sava.solana.web2.birdeye.client.http;
   exports software.sava.solana.web2.birdeye.client.http.response;
