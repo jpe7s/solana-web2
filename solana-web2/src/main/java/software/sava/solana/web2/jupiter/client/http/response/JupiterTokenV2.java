@@ -38,7 +38,7 @@ public record JupiterTokenV2(PublicKey address,
                              double usdPrice,
                              BigInteger priceBlockId,
                              BigDecimal liquidity,
-                             Collection<JupiterTokenStats> tokenStats,
+                             SequencedCollection<JupiterTokenStats> tokenStats,
                              int ctLikes,
                              int smartCtLikes,
                              Instant updatedAt) implements TokenContext {
@@ -120,6 +120,8 @@ public record JupiterTokenV2(PublicKey address,
 
   private static final class Parser implements FieldBufferPredicate {
 
+    private static final List<JupiterTokenStats> NO_STATS = List.of();
+
     private PublicKey address;
     private String name;
     private String symbol;
@@ -141,20 +143,33 @@ public record JupiterTokenV2(PublicKey address,
     private double usdPrice;
     private BigInteger priceBlockId;
     private BigDecimal liquidity;
-    private final List<JupiterTokenStats> tokenStats;
+    private List<JupiterTokenStats> tokenStats;
     private int ctLikes;
     private int smartCtLikes;
     private Instant updatedAt;
 
     private Parser() {
-      this.tokenStats = new ArrayList<>();
     }
 
     private JupiterTokenV2 create() {
-      return new JupiterTokenV2(address, name, symbol, icon, decimals, circSupply, totalSupply,
-          tokenProgram, jupiterPoolContext, holderCount, jupiterTokenAudit, organicScore, organicScoreLabel,
-          verified, cexes, tags, fdv, mcap, usdPrice, priceBlockId, liquidity,
-          tokenStats, ctLikes, smartCtLikes, updatedAt
+      return new JupiterTokenV2(
+          address, name, symbol, icon,
+          decimals,
+          Objects.requireNonNullElse(circSupply, BigDecimal.ZERO),
+          Objects.requireNonNullElse(totalSupply, BigDecimal.ZERO),
+          tokenProgram,
+          jupiterPoolContext,
+          holderCount,
+          jupiterTokenAudit,
+          organicScore, organicScoreLabel,
+          verified, cexes, tags,
+          Objects.requireNonNullElse(fdv, BigDecimal.ZERO),
+          Objects.requireNonNullElse(mcap, BigDecimal.ZERO),
+          usdPrice, priceBlockId,
+          Objects.requireNonNullElse(liquidity, BigDecimal.ZERO),
+          Objects.requireNonNullElse(tokenStats, NO_STATS),
+          ctLikes, smartCtLikes,
+          updatedAt
       );
     }
 
@@ -220,6 +235,9 @@ public record JupiterTokenV2(PublicKey address,
         if (unit == null) {
           ji.skip();
         } else {
+          if (tokenStats == null) {
+            this.tokenStats = new ArrayList<>();
+          }
           final int from = offset + 5;
           final int duration = Integer.parseInt(new String(buf, from, unitOffset - from));
           final var tokenStats = JupiterTokenStats.parse(ji, Duration.of(duration, unit));

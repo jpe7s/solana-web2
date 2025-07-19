@@ -7,16 +7,16 @@ import java.time.Duration;
 
 import static systems.comodal.jsoniter.JsonIterator.fieldEquals;
 
-record JupiterTokenStats(Duration duration,
-                         double priceChange,
-                         double liquidityChange,
-                         double volumeChange,
-                         double buyVolume, double sellVolume,
-                         double buyOrganicVolume, double sellOrganicVolume,
-                         int numBuys, int numSells,
-                         int numTraders,
-                         int numOrganicBuyers,
-                         int numNetBuyers) {
+public record JupiterTokenStats(Duration duration,
+                                double priceChange,
+                                double liquidityChange,
+                                double volumeChange,
+                                double buyVolume, double sellVolume,
+                                double buyOrganicVolume, double sellOrganicVolume,
+                                int numBuys, int numSells,
+                                int numTraders,
+                                int numOrganicBuyers,
+                                int numNetBuyers) {
 
   public static JupiterTokenStats parse(final JsonIterator ji, final Duration duration) {
     final var parser = new Parser(duration);
