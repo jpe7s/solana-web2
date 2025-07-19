@@ -17,5 +17,6 @@ public enum JupiterTokenTag {
   strict,
   token_2022,
   unknown,
-  verified
+  verified,
+  xstocks
 }
