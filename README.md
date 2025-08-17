@@ -11,6 +11,8 @@ User documentation lives at [sava.software](https://sava.software/).
 
 ## Contribution
 
+Signing a contributer license agreement is required.
+
 Unit tests are needed and welcomed. Otherwise, please open a discussion, issue, or send an email before working on a
 pull request.
 
