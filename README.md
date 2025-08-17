@@ -9,12 +9,11 @@ User documentation lives at [sava.software](https://sava.software/).
 * [Dependency Configuration](https://sava.software/quickstart)
 * [Web 2.0](https://sava.software/libraries/web2)
 
-## Contribution
+## Contributions
 
-Signing a contributer license agreement is required.
+Please note that all contributions require agreeing to the [Sava Engineering, Inc. CLA](https://gist.github.com/jpe7s/09546e42783187c6d04f38e04184ecfa).
 
-Unit tests are needed and welcomed. Otherwise, please open a discussion, issue, or send an email before working on a
-pull request.
+Tests are needed and welcomed. Otherwise, [please reach out](https://github.com/sava-software) before working on a pull request.
 
 ## Build
 
